@@ -1,0 +1,394 @@
+﻿@model DefectManagement.Models.SVN_quality_reason
+
+<link rel="stylesheet" href="~/css/create-form.css" asp-append-version="true" />
+
+<div class="defect-form-container">
+    <div class="form-header">
+        <h1 class="form-title">Defect Management</h1>
+    </div>
+
+    <form asp-action="Create" id="defectForm">
+        <div class="form-grid">
+            <div class="form-group">
+                <label class="form-label">SVN Code</label>
+                <input id="Employer_code" name="Employer_code" class="form-control" placeholder="Nhập mã SVN..." />
+                <div style="margin-top: 5px;">
+                    <button type="button"
+                        style="width:60px; height:30px; border:none; font-size:14px; color:white; border-radius:6px; background-color:#fa6d6d;"
+                        onclick="deleteField('Employer_code', this)">Xóa</button>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Work Order</label>
+                <input id="WorkOrder" name="WorkOrder" class="form-control" placeholder="Nhập số Work Order..." />
+                <div style="margin-top: 5px;">
+                    <button type="button"
+                        style="width:60px; height:30px; border:none; font-size:14px; color:white; border-radius:6px; background-color:#fa6d6d;"
+                        onclick="deleteField('WorkOrder', this)">Xóa</button>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Operation</label>
+                <select id="operation" name="Operation" class="form-control" asp-items="ViewBag.Operations">
+                    <option value="">-- Chọn Operation --</option>
+                </select>
+                <div style="margin-top: 5px;">
+                    @* <button type="button"
+                        style="width:60px; height:30px; border:none; font-size:14px; color:white; border-radius:6px; background-color:#fa6d6d;"
+                        onclick="deleteField('operation', this)">Xóa</button> *@
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Mã defect</label>
+                <select id="code" name="Defect_Code" class="form-control">
+                    <option value="">-- Chọn Code --</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Tên Defect</label>
+                <input id="name" class="form-control" readonly placeholder="" />
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Số lượng NG</label>
+                <input id="Qty_NG" name="Qty_NG" type="number" class="form-control" placeholder="Nhập số lượng NG..."
+                    min="0" />
+            </div>
+
+            <div class="form-group full-width">
+                <label class="form-label">Ghi chú (tùy chọn)</label>
+                <textarea id="Note" name="Note" class="form-control" placeholder="Nhập ghi chú (tùy chọn)..."
+                    rows="4"></textarea>
+            </div>
+        </div>
+
+        <div class="btn-container">
+            <button type="button" id="btnSaveToDB" class="btn btn-primary">
+                Lưu Thông Tin
+            </button>
+        </div>
+
+        <div id="resultMessage" style="margin-top: 10px; text-align: center;"></div>
+    </form>
+</div>
+
+@section Scripts {
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <!-- Select2 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+    <!-- Select2 JS -->
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+    <script>
+
+        let currentProductCode = ""; // lưu productCode từ Odoo API
+
+
+        $(document).ready(function () {
+
+            // Gọi Odoo API khi blur khỏi Work Order
+            $('#WorkOrder').on('blur', function () {
+                const workOrder = $(this).val();
+                if (workOrder) {
+                    $.ajax({
+                        url: '/api/Odoo/search',
+                        type: 'GET',
+                        data: { productionCode: workOrder },
+                        success: function (res) {
+                            if (res && res.productCode) {
+                                currentProductCode = res.productCode;
+                                console.log("✅ Lấy productCode:", currentProductCode);
+                            } else {
+                                currentProductCode = "";
+                                alert("Không tìm thấy product code!");
+                            }
+                        },
+                        error: function (err) {
+                            currentProductCode = "";
+                            console.error("❌ API Odoo lỗi:", err);
+                            alert("Lỗi khi gọi API Odoo!");
+                        }
+                    });
+                }
+            });
+
+            // Initialize Select2 for dropdowns
+            $('#operation').select2({
+                placeholder: "Tìm kiếm Operation...",
+                allowClear: true,
+                width: '100%',
+                language: {
+                    noResults: function () {
+                        return "Không tìm thấy kết quả";
+                    },
+                    searching: function () {
+                        return "Đang tìm kiếm...";
+                    },
+                    inputTooShort: function () {
+                        return "Vui lòng nhập ít nhất 1 ký tự";
+                    }
+                }
+            });
+
+            $('#code').select2({
+                placeholder: "Tìm kiếm Mã lỗi...",
+                allowClear: true,
+                width: '100%',
+                language: {
+                    noResults: function () {
+                        return "Không tìm thấy kết quả";
+                    },
+                    searching: function () {
+                        return "Đang tìm kiếm...";
+                    },
+                    inputTooShort: function () {
+                        return "Vui lòng nhập ít nhất 1 ký tự";
+                    }
+                }
+            });
+
+            // Form validation with Select2 support
+            function validateForm() {
+                let isValid = true;
+                const requiredFields = ['input[name="Employer_code"]', 'input[name="WorkOrder"]', 'select[name="Operation"]', 'select[name="Defect_Code"]', 'input[name="Qty_NG"]'];
+
+                requiredFields.forEach(function (selector) {
+                    const field = $(selector);
+                    const select2Container = field.next('.select2-container');
+
+                    if (!field.val()) {
+                        field.addClass('invalid').removeClass('valid');
+                        if (select2Container.length) {
+                            select2Container.find('.select2-selection').addClass('invalid').removeClass('valid');
+                        }
+                        isValid = false;
+                    } else {
+                        field.addClass('valid').removeClass('invalid');
+                        if (select2Container.length) {
+                            select2Container.find('.select2-selection').addClass('valid').removeClass('invalid');
+                        }
+                    }
+                });
+
+                return isValid;
+            }
+
+            // Real-time validation with Select2 support
+            $('input, select').on('blur change', function () {
+                const $this = $(this);
+                const select2Container = $this.next('.select2-container');
+
+                if ($this.val()) {
+                    $this.addClass('valid').removeClass('invalid');
+                    if (select2Container.length) {
+                        select2Container.find('.select2-selection').addClass('valid').removeClass('invalid');
+                    }
+                } else {
+                    $this.addClass('invalid').removeClass('valid');
+                    if (select2Container.length) {
+                        select2Container.find('.select2-selection').addClass('invalid').removeClass('valid');
+                    }
+                }
+            });
+
+            // Select2 change events
+            $('#operation').on('select2:select select2:unselect', function () {
+                $(this).trigger('change');
+            });
+
+            $('#code').on('select2:select select2:unselect', function () {
+                $(this).trigger('change');
+            });
+
+            // Operation change handler with Select2
+            $("#operation").change(function () {
+                const operation = $(this).val();
+                const $codeSelect = $("#code");
+                const $nameInput = $("#name");
+
+                // Clear and disable code select while loading
+                $codeSelect.empty().append('<option value="">-- Đang tải... --</option>');
+                $codeSelect.prop('disabled', true).trigger('change.select2');
+                $nameInput.val('');
+
+                if (operation) {
+                    $.getJSON('/Defect/GetCodesByOperation', { operation: operation })
+                        .done(function (data) {
+                            $codeSelect.empty().append('<option value="">-- Chọn Code --</option>');
+                            $.each(data, function (i, item) {
+                                $codeSelect.append($('<option>', {
+                                    value: item.code,
+                                    text: item.code
+                                }).data("name", item.name));
+                            });
+                            $codeSelect.prop('disabled', false).trigger('change.select2');
+                        })
+                        .fail(function () {
+                            $codeSelect.empty().append('<option value="">-- Lỗi tải dữ liệu --</option>');
+                            $codeSelect.prop('disabled', false).trigger('change.select2');
+                        });
+                } else {
+                    $codeSelect.empty().append('<option value="">-- Chọn Code --</option>');
+                    $codeSelect.prop('disabled', false).trigger('change.select2');
+                }
+            });
+
+            // Code change handler
+            $("#code").change(function () {
+                const selectedName = $(this).find(':selected').data("name") || '';
+                $("#name").val(selectedName);
+            });
+
+            // Auto-focus first input
+            $('input[name="Employer_code"]').focus();
+        });
+
+
+        document.getElementById("btnSaveToDB").addEventListener("click", function (e) {
+            e.preventDefault();
+
+            // Validate form trước khi gửi
+            const employerCode = document.getElementById("Employer_code").value;
+            const workOrder = document.getElementById("WorkOrder").value;
+            const operation = document.getElementById("operation").value;
+            const defectCode = document.getElementById("code").value;
+            const qtyNG = document.getElementById("Qty_NG").value;
+            const resultMessageDiv = document.getElementById("resultMessage"); // Thêm dòng này
+
+
+            if (!employerCode || !workOrder || !operation || !defectCode || !qtyNG || qtyNG <= 0) {
+                document.getElementById("resultMessage").innerHTML =
+                    `<span style="color:red">Vui lòng điền đầy đủ thông tin bắt buộc!</span>`;
+                resultMessageDiv.style.display = 'block'; // Hiện thông báo lỗi
+                setTimeout(() => {
+                    resultMessageDiv.style.display = 'none';
+                }, 1000); // Ẩn thông báo lỗi sau 1 giây
+                return;
+            }
+
+            if (employerCode) {
+                localStorage.setItem('Employer_code', employerCode);
+            }
+            if (workOrder) {
+                localStorage.setItem('WorkOrder', workOrder);
+            }
+            if (operation) {
+                localStorage.setItem('Operation', operation);
+            }
+
+            const btn = this;
+            btn.disabled = true;
+            btn.textContent = "Đang lưu...";
+
+            const data = {
+                Employer_code: employerCode,
+                Work_order: workOrder,
+                Item_code: currentProductCode,
+                Operation: operation,
+                Defect_Code: defectCode,
+                Qty_NG: parseInt(qtyNG),
+                Note: document.getElementById("Note").value || ""
+            };
+
+            console.log("Sending data:", data);
+
+            fetch('/Defect/Create', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json; charset=utf-8',
+                    'RequestVerificationToken': $('input[name="__RequestVerificationToken"]').val()
+                },
+                body: JSON.stringify(data)
+            })
+                .then(res => {
+                    if (!res.ok) {
+                        throw new Error(`HTTP error! status: ${res.status}`);
+                    }
+                    return res.json();
+                })
+                .then(response => {
+                    console.log("Response:", response);
+
+                    if (response.success) {
+                        document.getElementById("resultMessage").innerHTML =
+                            `<span style="color:green; font-weight:bold">${response.message}</span>`;
+
+                        resultMessageDiv.style.display = 'block'; // Hiện thông báo thành công
+
+                        setTimeout(() => {
+                            resultMessageDiv.style.display = 'none';
+                            resultMessageDiv.innerHTML = '';
+                        }, 2000);
+
+                        // Reset form sau khi lưu thành công
+                        document.getElementById("defectForm").reset();
+                        $('#operation').val(null).trigger('change');
+                        $('#code').val(null).trigger('change');
+                        document.getElementById("name").value = '';
+
+                        setTimeout(() => {
+                            autofillFields();
+                        }, 100);
+                        document.getElementById("resultMessage").innerHTML =
+                            `<span style="color:red; font-weight:bold">${response.message}</span>`;
+                        resultMessageDiv.style.display = 'block'; // Hiện thông báo lỗi
+                        setTimeout(() => {
+                            resultMessageDiv.style.display = 'none';
+                            resultMessageDiv.innerHTML = '';
+                        }, 2000);
+                    }
+                })
+                .catch(err => {
+                    console.error("Error:", err);
+                    document.getElementById("resultMessage").innerHTML =
+                        `<span style="color:red; font-weight:bold">Lỗi: ${err.message}</span>`;
+                    resultMessageDiv.style.display = 'block'; // Hiện thông báo lỗi
+                    setTimeout(() => {
+                        resultMessageDiv.style.display = 'none';
+                        resultMessageDiv.innerHTML = '';
+                    }, 2000);
+                })
+                .finally(() => {
+
+                    btn.disabled = false;
+                    btn.textContent = "Lưu Thông Tin";
+                });
+        });
+
+
+
+        // xóa nhỏ
+        function deleteField(fieldId, button) {
+            localStorage.removeItem(fieldId);
+            const field = document.getElementById(fieldId);
+            if (field) {
+                field.value = '';
+                if ($(field).hasClass('select2-hidden-accessible')) {
+                    $(field).val(null).trigger('change');
+                }
+            }
+        }
+
+        function autofillFields() {
+            const employerCode = localStorage.getItem('Employer_code');
+            const workOrder = localStorage.getItem('WorkOrder');
+            const operation = localStorage.getItem('Operation');
+
+            if (employerCode) {
+                $('#Employer_code').val(employerCode);
+            }
+            if (workOrder) {
+                $('#WorkOrder').val(workOrder);
+            }
+            if (operation) {
+                if ($('#operation option[value="' + operation + '"]').length > 0) {
+                    $('#operation').val(operation).trigger('change');
+                }
+            }
+        }
+        autofillFields();
+    </script>
+}
