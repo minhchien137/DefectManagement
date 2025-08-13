@@ -5,7 +5,7 @@ namespace DefectManagement.Models
     [Table("SVN_quality_reason")]
     public class SVN_quality_reason
     {
-        public int id {  get; set; }
+        public int id { get; set; }
 
         public string create_uid { get; set; }
 
@@ -13,7 +13,7 @@ namespace DefectManagement.Models
 
         public string name { get; set; }
 
-        public DateTime create_date { get; set; } 
+        public DateTime create_date { get; set; }
 
         public DateTime write_date { get; set; }
 
