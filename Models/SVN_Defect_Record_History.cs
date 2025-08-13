@@ -26,6 +26,8 @@ namespace DefectManagement.Models
 
         public string Note { get; set; }
 
+        public string Image_error { get; set; }
+
 
     }
 }

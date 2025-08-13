@@ -138,3 +138,4 @@ D:\DefectManagement\DefectManagement\obj\Release\net8.0\DefectManagement.pdb
 D:\DefectManagement\DefectManagement\obj\Release\net8.0\DefectManagement.genruntimeconfig.cache
 D:\DefectManagement\DefectManagement\obj\Release\net8.0\ref\DefectManagement.dll
 D:\DefectManagement\DefectManagement\bin\Release\net8.0\Newtonsoft.Json.dll
+D:\DefectManagement\DefectManagement\obj\Release\net8.0\DefectManagement.sourcelink.json

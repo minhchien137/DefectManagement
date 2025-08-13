@@ -450,3 +450,4 @@ D:\DefectManagement\DefectManagement\obj\Release\net8.0\win-x64\DefectManagement
 D:\DefectManagement\DefectManagement\obj\Release\net8.0\win-x64\DefectManagement.genruntimeconfig.cache
 D:\DefectManagement\DefectManagement\obj\Release\net8.0\win-x64\ref\DefectManagement.dll
 D:\DefectManagement\DefectManagement\bin\Release\net8.0\win-x64\Newtonsoft.Json.dll
+D:\DefectManagement\DefectManagement\obj\Release\net8.0\win-x64\DefectManagement.sourcelink.json

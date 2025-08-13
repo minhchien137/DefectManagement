@@ -1,4 +1,5 @@
 ﻿using System.Text;
+using System.Threading.Tasks;
 using DefectManagement.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
@@ -9,10 +10,12 @@ namespace DefectManagement.Controllers
     public class DefectController : Controller
     {
         private readonly ApplicationDbContext _context;
+        private readonly IWebHostEnvironment _webHostEnvironment;
 
-        public DefectController(ApplicationDbContext context, HttpClient httpClient)
+        public DefectController(ApplicationDbContext context, IWebHostEnvironment webHostEnvironment)
         {
             _context = context;
+            _webHostEnvironment = webHostEnvironment;
         }
 
         // Get danh sách operation
@@ -40,7 +43,7 @@ namespace DefectManagement.Controllers
         }
 
         [HttpPost]
-        public IActionResult Create([FromBody] SVN_Defect_Record_History model)
+        public async Task<IActionResult> Create(SVN_Defect_Record_History model, IFormFile imageFile)
         {
             try
             {
@@ -55,42 +58,66 @@ namespace DefectManagement.Controllers
                     return Json(new { success = false, message = "Vui lòng điền đầy đủ thông tin bắt buộc!" });
                 }
 
-                var historyRecord = new SVN_Defect_Record_History
+                string imagePath = null;
+
+                // Xử lý upload ảnh nếu có
+                if (imageFile != null && imageFile.Length > 0)
                 {
-                    Work_order = model.Work_order,
-                    Item_code = model.Item_code,
-                    Defect_Code = model.Defect_Code,
-                    Qty_NG = model.Qty_NG,
-                    INSDatetime = DateTime.Now.ToString("yyyyMMdd"),
-                    Operation = model.Operation,
-                    Employer_code = model.Employer_code,
-                    Employer_name = model.Employer_name ?? "",
-                    Note = model.Note
-                };
+                    // Kiểm tra định dạng file
+                    var allowedExtensions = new[] { ".jpg", ".jpeg", ".png", ".gif", ".bmp" };
+                    var fileExtension = Path.GetExtension(imageFile.FileName).ToLower();
 
-                // lưu vào bảng Defect_History
-                _context.SVN_Defect_Record_History.Add(historyRecord);
-                _context.SaveChanges();
-                Console.WriteLine("History saved successfully");
+                    if (!allowedExtensions.Contains(fileExtension))
+                    {
+                        return Json(new { success = false, message = "Chỉ cho phép upload ảnh với định dạng: jpg, jpeg, png, gif, bmp" });
+                    }
 
-                var insertSql = @"INSERT INTO SVN_Defect_Record_Copy 
-                                (Item_code, Defect_Code, Qty_NG, INSDatetime, Operation, Employer_code, Employer_name) 
-                                VALUES ({0}, {1}, {2}, {3}, {4}, {5}, {6})";
+                    // Kiểm tra kích thước file (5MB)
+                    if (imageFile.Length > 5 * 1024 * 1024)
+                    {
+                        return Json(new { success = false, message = "Kích thước ảnh không được vượt quá 5MB" });
+                    }
 
-                // lưu vào bảng Defect_Record
-                _context.Database.ExecuteSqlRaw(insertSql,
-                    historyRecord.Item_code,
-                    historyRecord.Defect_Code,
-                    historyRecord.Qty_NG,
-                    historyRecord.INSDatetime,
-                    historyRecord.Operation,
-                    historyRecord.Employer_code,
-                    historyRecord.Employer_name ?? "");
+                    // Tạo thư mục uploads/defect-images nếu chưa có
+                    var uploadsFolder = Path.Combine(_webHostEnvironment.WebRootPath, "uploads", "defect-images");
+                    if (!Directory.Exists(uploadsFolder))
+                    {
+                        Directory.CreateDirectory(uploadsFolder);
+                    }
 
-                Console.WriteLine("Copy saved successfully");
+                    // Tạo tên file unique
+                    var fileName = $"{DateTime.Now:yyyyMMdd_HHmmss}_{Guid.NewGuid():N}{fileExtension}";
+                    var filePath = Path.Combine(uploadsFolder, fileName);
+
+                    // Lưu file
+                    using (var stream = new FileStream(filePath, FileMode.Create))
+                    {
+                        await imageFile.CopyToAsync(stream);
+                    }
+
+                    // Lưu đường dẫn relative để hiển thị trên web
+                    imagePath = $"/uploads/defect-images/{fileName}";
+                }
+
+                // Gọi stored procedure với parameters
+                await _context.Database.ExecuteSqlRawAsync(
+                    "EXEC [dbo].[SVN_InsertDefectReport] {0}, {1}, {2}, {3}, {4}, {5}, {6}, {7}, {8}, {9}",
+                    model.Work_order ?? "",
+                    model.Item_code ?? "",
+                    model.Defect_Code ?? "",
+                    model.Qty_NG,
+                    DateTime.Now.ToString("yyyyMMdd"),
+                    model.Operation ?? "",
+                    model.Employer_code ?? "",
+                    model.Employer_name ?? "",
+                    model.Note ?? "",
+                    imagePath ?? "");
+
+                Console.WriteLine("Stored procedure executed successfully");
 
                 return Json(new { success = true, message = "Lưu thông tin thành công!", data = model });
             }
+
             catch (Exception ex)
             {
                 return Json(new { success = false, message = $"Có lỗi xảy ra: {ex.Message}" });
