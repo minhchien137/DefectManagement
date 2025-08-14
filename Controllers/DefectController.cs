@@ -1,4 +1,6 @@
 ﻿using System.Text;
+using ClosedXML.Excel;
+using System.IO;
 using System.Threading.Tasks;
 using DefectManagement.Models;
 using Microsoft.AspNetCore.Mvc;
@@ -42,6 +44,84 @@ namespace DefectManagement.Controllers
             return Json(codes);
         }
 
+
+        // Xuất File Excel
+        public async Task<IActionResult> ExportToExcel(string workOrder = "", string itemCode = "", string employerCode = "", string insDateTime = "")
+        {
+            var query = _context.SVN_Defect_Record_History.AsQueryable();
+
+            if (!string.IsNullOrEmpty(workOrder))
+                query = query.Where(x => x.Work_order.Contains(workOrder));
+
+            if (!string.IsNullOrEmpty(itemCode))
+                query = query.Where(x => x.Item_code.Contains(itemCode));
+
+            if (!string.IsNullOrEmpty(employerCode))
+                query = query.Where(x => x.Employer_code.Contains(employerCode));
+
+            if (!string.IsNullOrEmpty(insDateTime))
+                query = query.Where(x => x.INSDatetime.Contains(insDateTime));
+
+            var data = await query.OrderByDescending(x => x.Time_line).ToListAsync();
+
+            using (var workbook = new XLWorkbook())
+            {
+                var ws = workbook.Worksheets.Add("DefectHistory");
+                var currentRow = 1;
+
+                // Font mặc định
+                ws.Style.Font.FontName = "Arial";
+                ws.Style.Font.FontSize = 11;
+
+                // Header
+                string[] headers = { "ID", "Work Order", "Item Code", "Defect Code", "Qty NG", "INS DateTime", "Operation", "Employer Code", "Employer Name", "Note", "Image Error", "Time Line" };
+                for (int i = 0; i < headers.Length; i++)
+                {
+                    var cell = ws.Cell(currentRow, i + 1);
+                    cell.Value = headers[i];
+                    cell.Style.Font.Bold = true;
+                    cell.Style.Fill.BackgroundColor = XLColor.Green;
+                    cell.Style.Font.FontColor = XLColor.White;
+                    cell.Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
+                    cell.Style.Alignment.Vertical = XLAlignmentVerticalValues.Center;
+                }
+
+                // Data
+                foreach (var item in data)
+                {
+                    currentRow++;
+                    ws.Cell(currentRow, 1).Value = item.Id;
+                    ws.Cell(currentRow, 2).Value = item.Work_order;
+                    ws.Cell(currentRow, 3).Value = item.Item_code;
+                    ws.Cell(currentRow, 4).Value = item.Defect_Code;
+                    ws.Cell(currentRow, 5).Value = item.Qty_NG;
+                    ws.Cell(currentRow, 6).Value = item.INSDatetime;
+                    ws.Cell(currentRow, 7).Value = item.Operation;
+                    ws.Cell(currentRow, 8).Value = item.Employer_code;
+                    ws.Cell(currentRow, 9).Value = item.Employer_name;
+                    ws.Cell(currentRow, 10).Value = item.Note;
+                    ws.Cell(currentRow, 11).Value = item.Image_error;
+                    ws.Cell(currentRow, 12).Value = item.Time_line?.ToString("yyyy-MM-dd HH:mm:ss");
+                }
+
+                // Canh giữa các cột số và ngày
+                ws.Columns(1, 1).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center; // ID
+                ws.Columns(5, 5).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center; // Qty NG
+                ws.Columns(6, 6).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center; // INS DateTime
+                ws.Columns(12, 12).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center; // Time Line
+
+                // Auto fit column width
+                ws.Columns().AdjustToContents();
+
+                using (var stream = new MemoryStream())
+                {
+                    workbook.SaveAs(stream);
+                    return File(stream.ToArray(),
+                        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                        "DefectHistory.xlsx");
+                }
+            }
+        }
 
 
         public async Task<IActionResult> Result(string workOrder = "", string itemCode = "", string employerCode = "", string insDateTime = "")
