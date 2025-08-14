@@ -42,6 +42,67 @@ namespace DefectManagement.Controllers
             return Json(codes);
         }
 
+
+
+        public async Task<IActionResult> Result(string workOrder = "", string itemCode = "", string employerCode = "", string insDateTime = "")
+        {
+            try
+            {
+                var sql = "SELECT * FROM SVN_Defect_Record_History WHERE 1=1";
+                var parameters = new List<object>();
+
+                if (!string.IsNullOrEmpty(workOrder))
+                {
+                    sql += " AND (Work_order LIKE {" + parameters.Count + "} OR Work_order IS NULL)";
+                    parameters.Add($"%{workOrder}%");
+                }
+
+                if (!string.IsNullOrEmpty(itemCode))
+                {
+                    sql += " AND (Item_code LIKE {" + parameters.Count + "} OR Item_code IS NULL)";
+                    parameters.Add($"%{itemCode}%");
+                }
+
+                if (!string.IsNullOrEmpty(employerCode))
+                {
+                    sql += " AND (Employer_code LIKE {" + parameters.Count + "} OR Employer_code IS NULL)";
+                    parameters.Add($"%{employerCode}%");
+                }
+
+                if (!string.IsNullOrEmpty(insDateTime))
+                {
+                    sql += " AND (INSDatetime LIKE {" + parameters.Count + "} OR INSDatetime IS NULL)";
+                    parameters.Add($"%{insDateTime}%");
+                }
+
+                sql += " ORDER BY Time_line DESC";
+
+                var results = await _context.SVN_Defect_Record_History
+                    .FromSqlRaw(sql, parameters.ToArray())
+                    .AsNoTracking()
+                    .ToListAsync();
+
+                // Truyền giá trị filter ra View
+                ViewBag.WorkOrder = workOrder ?? "";
+                ViewBag.ItemCode = itemCode ?? "";
+                ViewBag.EmployerCode = employerCode ?? "";
+                ViewBag.InsDateTime = insDateTime ?? "";
+
+                return View(results);
+            }
+            catch (Exception ex)
+            {
+                ViewBag.ErrorMessage = $"Lỗi: {ex.Message}";
+                ViewBag.WorkOrder = workOrder ?? "";
+                ViewBag.ItemCode = itemCode ?? "";
+                ViewBag.EmployerCode = employerCode ?? "";
+                ViewBag.InsDateTime = insDateTime ?? "";
+
+                return View(new List<SVN_Defect_Record_History>());
+            }
+        }
+
+
         [HttpPost]
         public async Task<IActionResult> Create(SVN_Defect_Record_History model, IFormFile imageFile)
         {
@@ -101,7 +162,7 @@ namespace DefectManagement.Controllers
 
                 // Gọi stored procedure với parameters
                 await _context.Database.ExecuteSqlRawAsync(
-                    "EXEC [dbo].[SVN_InsertDefectReport] {0}, {1}, {2}, {3}, {4}, {5}, {6}, {7}, {8}, {9}",
+                    "EXEC [dbo].[SVN_InsertDefectReport] {0}, {1}, {2}, {3}, {4}, {5}, {6}, {7}, {8}, {9}, {10}",
                     model.Work_order ?? "",
                     model.Item_code ?? "",
                     model.Defect_Code ?? "",
@@ -111,7 +172,8 @@ namespace DefectManagement.Controllers
                     model.Employer_code ?? "",
                     model.Employer_name ?? "",
                     model.Note ?? "",
-                    imagePath ?? "");
+                    imagePath ?? "",
+                    DateTime.Now);
 
                 Console.WriteLine("Stored procedure executed successfully");
 

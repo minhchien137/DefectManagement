@@ -12,6 +12,8 @@ namespace DefectManagement.Models
 
         public DbSet<SVN_Defect_Record_History> SVN_Defect_Record_History { get; set; }
 
+        public DbSet<SVN_Defect_Record_History_test> SVN_Defect_Record_History_test { get; set; }
+
 
         public DbSet<SVN_Defect_Record_Copy> sVN_Defect_Record_Copy { get; set; }
 
