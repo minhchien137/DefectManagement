@@ -46,7 +46,7 @@ namespace DefectManagement.Controllers
 
 
         // Xuất File Excel
-        public async Task<IActionResult> ExportToExcel(string workOrder = "", string itemCode = "", string employerCode = "", string insDateTime = "")
+        public async Task<IActionResult> ExportToExcel(string workOrder = "", string itemCode = "", string employerCode = "", string operation = "", string fromInsDateTime = "", string toInsDateTime = "")
         {
             var query = _context.SVN_Defect_Record_History.AsQueryable();
 
@@ -59,8 +59,20 @@ namespace DefectManagement.Controllers
             if (!string.IsNullOrEmpty(employerCode))
                 query = query.Where(x => x.Employer_code.Contains(employerCode));
 
-            if (!string.IsNullOrEmpty(insDateTime))
-                query = query.Where(x => x.INSDatetime.Contains(insDateTime));
+            if (!string.IsNullOrEmpty(operation))
+                query = query.Where(x => x.Operation.Contains(operation));
+
+            if (!string.IsNullOrEmpty(fromInsDateTime) && DateTime.TryParse(fromInsDateTime, out var fromDate))
+            {
+                var formattedDate = fromDate.ToString("yyyyMMdd");
+                query = query.Where(x => x.INSDatetime.CompareTo(formattedDate) >= 0);
+            }
+            if (!string.IsNullOrEmpty(toInsDateTime) && DateTime.TryParse(toInsDateTime, out var toDate))
+            {
+                var formattedDate = toDate.ToString("yyyyMMdd");
+                query = query.Where(x => x.INSDatetime.CompareTo(formattedDate) <= 0);
+            }
+
 
             var data = await query.OrderByDescending(x => x.Time_line).ToListAsync();
 
@@ -124,7 +136,7 @@ namespace DefectManagement.Controllers
         }
 
 
-        public async Task<IActionResult> Result(string workOrder = "", string itemCode = "", string employerCode = "", string insDateTime = "")
+        public async Task<IActionResult> Result(string workOrder = "", string itemCode = "", string employerCode = "", string operation = "", string fromInsDateTime = "", string toInsDateTime = "")
         {
             try
             {
@@ -149,10 +161,26 @@ namespace DefectManagement.Controllers
                     parameters.Add($"%{employerCode}%");
                 }
 
-                if (!string.IsNullOrEmpty(insDateTime))
+                if (!string.IsNullOrEmpty(operation))
                 {
-                    sql += " AND (INSDatetime LIKE {" + parameters.Count + "} OR INSDatetime IS NULL)";
-                    parameters.Add($"%{insDateTime}%");
+                    sql += " AND (Operation LIKE {" + parameters.Count + "} OR Operation IS NULL)";
+                    parameters.Add($"%{operation}%");
+                }
+
+                // Logic lọc ngày tháng cũ
+                // ĐÃ SỬA ĐỔI: Logic lọc ngày tháng theo cột INSDatetime (chuỗi)
+                if (!string.IsNullOrEmpty(fromInsDateTime) && DateTime.TryParse(fromInsDateTime, out var fromDate))
+                {
+                    var formattedDate = fromDate.ToString("yyyyMMdd");
+                    sql += " AND (INSDatetime >= {" + parameters.Count + "})";
+                    parameters.Add(formattedDate);
+                }
+
+                if (!string.IsNullOrEmpty(toInsDateTime) && DateTime.TryParse(toInsDateTime, out var toDate))
+                {
+                    var formattedDate = toDate.ToString("yyyyMMdd");
+                    sql += " AND (INSDatetime <= {" + parameters.Count + "})";
+                    parameters.Add(formattedDate);
                 }
 
                 sql += " ORDER BY Time_line DESC";
@@ -166,8 +194,9 @@ namespace DefectManagement.Controllers
                 ViewBag.WorkOrder = workOrder ?? "";
                 ViewBag.ItemCode = itemCode ?? "";
                 ViewBag.EmployerCode = employerCode ?? "";
-                ViewBag.InsDateTime = insDateTime ?? "";
-
+                ViewBag.Operation = operation ?? "";
+                ViewBag.FromInsDateTime = fromInsDateTime ?? "";
+                ViewBag.ToInsDateTime = toInsDateTime ?? "";
                 return View(results);
             }
             catch (Exception ex)
@@ -176,7 +205,9 @@ namespace DefectManagement.Controllers
                 ViewBag.WorkOrder = workOrder ?? "";
                 ViewBag.ItemCode = itemCode ?? "";
                 ViewBag.EmployerCode = employerCode ?? "";
-                ViewBag.InsDateTime = insDateTime ?? "";
+                ViewBag.Operation = operation ?? "";
+                ViewBag.FromInsDateTime = fromInsDateTime ?? "";
+                ViewBag.ToInsDateTime = toInsDateTime ?? "";
 
                 return View(new List<SVN_Defect_Record_History>());
             }
