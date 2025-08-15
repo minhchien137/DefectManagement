@@ -46,15 +46,15 @@ namespace DefectManagement.Controllers
 
 
         // Xuất File Excel
-        public async Task<IActionResult> ExportToExcel(string workOrder = "", string itemCode = "", string employerCode = "", string operation = "", string fromInsDateTime = "", string toInsDateTime = "")
+        public async Task<IActionResult> ExportToExcel(string workOrder = "", string defectCode = "", string employerCode = "", string operation = "", string fromInsDateTime = "", string toInsDateTime = "")
         {
             var query = _context.SVN_Defect_Record_History.AsQueryable();
 
             if (!string.IsNullOrEmpty(workOrder))
                 query = query.Where(x => x.Work_order.Contains(workOrder));
 
-            if (!string.IsNullOrEmpty(itemCode))
-                query = query.Where(x => x.Item_code.Contains(itemCode));
+            if (!string.IsNullOrEmpty(defectCode))
+                query = query.Where(x => x.Item_code.Contains(defectCode));
 
             if (!string.IsNullOrEmpty(employerCode))
                 query = query.Where(x => x.Employer_code.Contains(employerCode));
@@ -136,7 +136,7 @@ namespace DefectManagement.Controllers
         }
 
 
-        public async Task<IActionResult> Result(string workOrder = "", string itemCode = "", string employerCode = "", string operation = "", string fromInsDateTime = "", string toInsDateTime = "")
+        public async Task<IActionResult> Result(string workOrder = "", string defectCode = "", string employerCode = "", string operation = "", string fromInsDateTime = "", string toInsDateTime = "")
         {
             try
             {
@@ -149,10 +149,10 @@ namespace DefectManagement.Controllers
                     parameters.Add($"%{workOrder}%");
                 }
 
-                if (!string.IsNullOrEmpty(itemCode))
+                if (!string.IsNullOrEmpty(defectCode))
                 {
-                    sql += " AND (Item_code LIKE {" + parameters.Count + "} OR Item_code IS NULL)";
-                    parameters.Add($"%{itemCode}%");
+                    sql += " AND (Defect_code LIKE {" + parameters.Count + "} OR Defect_code IS NULL)";
+                    parameters.Add($"%{defectCode}%");
                 }
 
                 if (!string.IsNullOrEmpty(employerCode))
@@ -167,8 +167,6 @@ namespace DefectManagement.Controllers
                     parameters.Add($"%{operation}%");
                 }
 
-                // Logic lọc ngày tháng cũ
-                // ĐÃ SỬA ĐỔI: Logic lọc ngày tháng theo cột INSDatetime (chuỗi)
                 if (!string.IsNullOrEmpty(fromInsDateTime) && DateTime.TryParse(fromInsDateTime, out var fromDate))
                 {
                     var formattedDate = fromDate.ToString("yyyyMMdd");
@@ -192,7 +190,7 @@ namespace DefectManagement.Controllers
 
                 // Truyền giá trị filter ra View
                 ViewBag.WorkOrder = workOrder ?? "";
-                ViewBag.ItemCode = itemCode ?? "";
+                ViewBag.DefectCode = defectCode ?? "";
                 ViewBag.EmployerCode = employerCode ?? "";
                 ViewBag.Operation = operation ?? "";
                 ViewBag.FromInsDateTime = fromInsDateTime ?? "";
@@ -203,7 +201,7 @@ namespace DefectManagement.Controllers
             {
                 ViewBag.ErrorMessage = $"Lỗi: {ex.Message}";
                 ViewBag.WorkOrder = workOrder ?? "";
-                ViewBag.ItemCode = itemCode ?? "";
+                ViewBag.DefectCode = defectCode ?? "";
                 ViewBag.EmployerCode = employerCode ?? "";
                 ViewBag.Operation = operation ?? "";
                 ViewBag.FromInsDateTime = fromInsDateTime ?? "";

@@ -451,3 +451,11 @@ D:\DefectManagement\DefectManagement\obj\Release\net8.0\win-x64\DefectManagement
 D:\DefectManagement\DefectManagement\obj\Release\net8.0\win-x64\ref\DefectManagement.dll
 D:\DefectManagement\DefectManagement\bin\Release\net8.0\win-x64\Newtonsoft.Json.dll
 D:\DefectManagement\DefectManagement\obj\Release\net8.0\win-x64\DefectManagement.sourcelink.json
+D:\DefectManagement\DefectManagement\bin\Release\net8.0\win-x64\ClosedXML.dll
+D:\DefectManagement\DefectManagement\bin\Release\net8.0\win-x64\ClosedXML.Parser.dll
+D:\DefectManagement\DefectManagement\bin\Release\net8.0\win-x64\DocumentFormat.OpenXml.dll
+D:\DefectManagement\DefectManagement\bin\Release\net8.0\win-x64\DocumentFormat.OpenXml.Framework.dll
+D:\DefectManagement\DefectManagement\bin\Release\net8.0\win-x64\ExcelNumberFormat.dll
+D:\DefectManagement\DefectManagement\bin\Release\net8.0\win-x64\RBush.dll
+D:\DefectManagement\DefectManagement\bin\Release\net8.0\win-x64\SixLabors.Fonts.dll
+D:\DefectManagement\DefectManagement\bin\Release\net8.0\win-x64\System.IO.Packaging.dll

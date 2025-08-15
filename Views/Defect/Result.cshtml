@@ -46,9 +46,9 @@
                                        placeholder="Nhập Work Order...">
                             </div>
                             <div class="col-md-3">
-                                <label class="form-label">Item Code:</label>
-                                <input type="text" class="form-control" name="itemCode" value="@ViewBag.ItemCode"
-                                       placeholder="Nhập Item Code...">
+                                <label class="form-label">Defect Code:</label>
+                                <input type="text" class="form-control" name="defectCode" value="@ViewBag.DefectCode"
+                                       placeholder="Nhập Defect Code...">
                             </div>
                             <div class="col-md-3">
                                 <label class="form-label">Employer Code:</label>
@@ -80,7 +80,7 @@
 
                                  <a href="@Url.Action("ExportToExcel", "Defect", new { 
                                     workOrder = ViewBag.WorkOrder, 
-                                    itemCode = ViewBag.ItemCode, 
+                                    defectCode = ViewBag.DefectCode, 
                                     employerCode = ViewBag.EmployerCode, 
                                     operation = ViewBag.Operation,
                                     fromInsDateTime = @ViewBag.FromInsDateTime,
