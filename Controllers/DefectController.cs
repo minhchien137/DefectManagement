@@ -82,7 +82,7 @@ namespace DefectManagement.Controllers
                 var currentRow = 1;
 
                 // Font mặc định
-                ws.Style.Font.FontName = "Arial";
+                ws.Style.Font.FontName = "Times New Roman";
                 ws.Style.Font.FontSize = 11;
 
                 // Header
@@ -92,7 +92,7 @@ namespace DefectManagement.Controllers
                     var cell = ws.Cell(currentRow, i + 1);
                     cell.Value = headers[i];
                     cell.Style.Font.Bold = true;
-                    cell.Style.Fill.BackgroundColor = XLColor.Green;
+                    cell.Style.Fill.BackgroundColor = XLColor.FromTheme(XLThemeColor.Accent1, 0.5);
                     cell.Style.Font.FontColor = XLColor.White;
                     cell.Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
                     cell.Style.Alignment.Vertical = XLAlignmentVerticalValues.Center;
