@@ -25,6 +25,34 @@
         .btn-secondary { background-color: #f87080; border-color: #f87080; }
         .btn-secondary:hover { background-color: #ff3b45; border-color: #ff3b45; }
         .text-null { color: #4b6fac; font-style: #4b6fac; }
+
+        @@media (max-width: 768px) {
+
+
+        a[style*="margin-left: 9px"] {
+            margin-left: 0 !important;
+            margin-top: 0 !important;
+        }
+
+        .row.mt-3 .col-12 
+        {
+        display: flex;
+        flex-wrap: nowrap;
+        gap: 8px;
+        justify-content: flex-start;
+        align-items: center;
+        }
+
+        .row.mt-3 .col-12 .btn {
+        flex: 1;
+        min-width: 100px;
+        margin: 0;
+        text-align: center;
+        font-size: 13px;
+        padding: 6px 8px;
+        }
+         
+    }
     </style>
 </head>
 
@@ -78,7 +106,7 @@
                                     <i class="fas fa-refresh me-1"></i>Xóa bộ lọc
                                 </a>
 
-                                 <a href="@Url.Action("ExportToExcel", "Defect", new { 
+                                 <a style="margin-left: 9px;" href="@Url.Action("ExportToExcel", "Defect", new { 
                                     workOrder = ViewBag.WorkOrder, 
                                     defectCode = ViewBag.DefectCode, 
                                     employerCode = ViewBag.EmployerCode, 
