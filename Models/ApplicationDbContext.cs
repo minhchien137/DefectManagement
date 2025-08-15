@@ -15,13 +15,5 @@ namespace DefectManagement.Models
         public DbSet<SVN_Defect_Record_History_test> SVN_Defect_Record_History_test { get; set; }
 
 
-        public DbSet<SVN_Defect_Record_Copy> sVN_Defect_Record_Copy { get; set; }
-
-
-        protected override void OnModelCreating(ModelBuilder modelBuilder)
-        {
-            modelBuilder.Entity<SVN_Defect_Record_Copy>().HasNoKey();
-            base.OnModelCreating(modelBuilder);
-        }
     }
 }

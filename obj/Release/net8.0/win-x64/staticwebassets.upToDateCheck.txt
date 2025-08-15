@@ -1,4 +1,5 @@
 wwwroot\css\create-form.css
+wwwroot\css\site.css
 wwwroot\favicon.ico
 wwwroot\js\site.js
 wwwroot\lib\bootstrap\dist\css\bootstrap-grid.css
@@ -79,4 +80,3 @@ wwwroot\uploads\defect-images\20250813_135525_21a973da277a4360a7ce922bcb41f74c.p
 wwwroot\uploads\defect-images\20250814_095037_009726431eb64c938d19fe3c48bc6f7d.png
 wwwroot\uploads\defect-images\20250814_095258_84971721e430450f8ee6b9119f6097f5.png
 wwwroot\uploads\defect-images\20250814_111034_7901068a9fdc4342ad2419b5085909db.png
-wwwroot\css\site.css

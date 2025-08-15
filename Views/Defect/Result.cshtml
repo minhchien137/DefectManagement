@@ -76,18 +76,26 @@
                             <div class="col-md-3">
                                 <label class="form-label">Defect Code:</label>
                                 <input type="text" class="form-control" name="defectCode" value="@ViewBag.DefectCode"
-                                       placeholder="Nhập Defect Code...">
+                                       placeholder="Nhập Defect Code...">       
                             </div>
                             <div class="col-md-3">
-                                <label class="form-label">Employer Code:</label>
-                                <input type="text" class="form-control" name="employerCode" value="@ViewBag.EmployerCode"
-                                       placeholder="Nhập Employer Code...">
+                                <label class="form-label">Defect Name:</label>
+                                <input type="text" class="form-control" name="defectName" value="@ViewBag.DefectName"
+                                       placeholder="Nhập Defect Name...">
                             </div>
+                            
                             <div class="col-md-3">
                                 <label class="form-label">Operation:</label>
                                 <input type="text" class="form-control" name="operation" value="@ViewBag.Operation"
                                     placeholder="Nhập Operation">
                             </div>
+
+                            <div class="col-md-3">
+                                <label class="form-label">Employer Code:</label>
+                                <input type="text" class="form-control" name="employerCode" value="@ViewBag.EmployerCode"
+                                       placeholder="Nhập Employer Code...">
+                            </div>
+                            
                              <div class="col-md-3">
                                 <label class="form-label">From:</label>
                                 <input type="date" class="form-control" name="fromInsDateTime" value="@ViewBag.FromInsDateTime" />
@@ -108,7 +116,8 @@
 
                                  <a style="margin-left: 9px;" href="@Url.Action("ExportToExcel", "Defect", new { 
                                     workOrder = @ViewBag.WorkOrder, 
-                                    defectCode = @ViewBag.DefectCode, 
+                                    defectCode = @ViewBag.DefectCode,
+                                    defectName = @ViewBag.DefectName,
                                     employerCode = @ViewBag.EmployerCode, 
                                     operation = @ViewBag.Operation,
                                     fromInsDateTime = @ViewBag.FromInsDateTime,
@@ -151,8 +160,9 @@
                                     <th>Work Order</th>
                                     <th>Item Code</th>
                                     <th>Defect Code</th>
+                                    <th>Defect Name</th>
                                     <th>Qty NG</th>
-                                    <th>INS DateTime</th>
+                                    @* <th>INS DateTime</th> *@
                                     <th>Operation</th>
                                     <th>Employer Code</th>
                                     <th>Employer Name</th>
@@ -169,11 +179,12 @@
                                         <td>@(string.IsNullOrWhiteSpace(item.Work_order) ? Html.Raw("<span class='text-null'>NULL</span>") : item.Work_order)</td>
                                         <td>@(string.IsNullOrWhiteSpace(item.Item_code) ? Html.Raw("<span class='text-null'>NULL</span>") : item.Item_code)</td>
                                         <td>@(string.IsNullOrWhiteSpace(item.Defect_Code) ? Html.Raw("<span class='text-null'>NULL</span>") : item.Defect_Code)</td>
+                                        <td>@(string.IsNullOrWhiteSpace(item.Defect_Name) ? Html.Raw("<span class='text-null'>NULL</span>") : item.Defect_Name)</td>
 
                                         <!-- Qty_NG nullable -->
                                         <td>@(item.Qty_NG?.ToString() ?? Html.Raw("<span class='text-null'>NULL</span>").ToString())</td>
 
-                                        <td>@(string.IsNullOrWhiteSpace(item.INSDatetime) ? Html.Raw("<span class='text-null'>NULL</span>") : item.INSDatetime)</td>
+                                        @* <td>@(string.IsNullOrWhiteSpace(item.INSDatetime) ? Html.Raw("<span class='text-null'>NULL</span>") : item.INSDatetime)</td> *@
                                         <td>@(string.IsNullOrWhiteSpace(item.Operation) ? Html.Raw("<span class='text-null'>NULL</span>") : item.Operation)</td>
                                         <td>@(string.IsNullOrWhiteSpace(item.Employer_code) ? Html.Raw("<span class='text-null'>NULL</span>") : item.Employer_code)</td>
                                         <td>@(string.IsNullOrWhiteSpace(item.Employer_name) ? Html.Raw("<span class='text-null'>NULL</span>") : item.Employer_name)</td>

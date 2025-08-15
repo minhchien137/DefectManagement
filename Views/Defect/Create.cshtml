@@ -136,11 +136,11 @@
             }
 
             toast.innerHTML = `
-                                                                                                                                                                                                                                                                                                                                                                                            <span class="toast-icon">${icon}</span>
-                                                                                                                                                                                                                                                                                                                                                                                            ${message}
-                                                                                                                                                                                                                                                                                                                                                                                            <button class="toast-close" onclick="closeToast(this)">&times;</button>
-                                                                                                                                                                                                                                                                                                                                                                                            <div class="toast-progress"></div>
-                                                                                                                                                                                                                                                                                                                                                                                        `;
+                                                                                                                                                                                                                                                                                                                                                                                                <span class="toast-icon">${icon}</span>
+                                                                                                                                                                                                                                                                                                                                                                                                ${message}
+                                                                                                                                                                                                                                                                                                                                                                                                <button class="toast-close" onclick="closeToast(this)">&times;</button>
+                                                                                                                                                                                                                                                                                                                                                                                                <div class="toast-progress"></div>
+                                                                                                                                                                                                                                                                                                                                                                                            `;
 
             toastContainer.appendChild(toast);
 
@@ -453,7 +453,7 @@
                     $codeSelect.empty().append('<option value="">-- Chọn Code --</option>');
                     $codeSelect.prop('disabled', false).trigger('change.select2');
                     @* showToast("Lỗi khi tải dữ liệu defect codes!", 'error', 2000); *@
-                                                                                                                                                                                                                                                                                                                                                                                            }
+                                                                                                                                                                                                                                                                                                                                                                                                }
             });
 
             // Code change handler
@@ -475,6 +475,7 @@
             const workOrder = document.getElementById("WorkOrder").value;
             const operation = document.getElementById("operation").value;
             const defectCode = document.getElementById("code").value;
+            const defectName = document.getElementById("name").value;
             const qtyNG = document.getElementById("Qty_NG").value;
             const resultMessageDiv = document.getElementById("resultMessage"); // Thêm dòng này
 
@@ -507,6 +508,7 @@
             formData.append('Item_code', currentProductCode);
             formData.append('Operation', operation);
             formData.append('Defect_Code', defectCode);
+            formData.append('Defect_Name', defectName);
             formData.append('Employer_name', currentNameEmployer);
             formData.append('Qty_NG', qtyNG);
             formData.append('Note', document.getElementById("Note").value || '');

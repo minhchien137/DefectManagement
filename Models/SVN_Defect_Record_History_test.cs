@@ -13,6 +13,8 @@ namespace DefectManagement.Models
 
         public string? Defect_Code { get; set; }
 
+        public string? Defect_Name { get; set; }
+
         public int? Qty_NG { get; set; }
 
         public string? INSDatetime { get; set; }

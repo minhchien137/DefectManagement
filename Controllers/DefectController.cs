@@ -46,7 +46,7 @@ namespace DefectManagement.Controllers
 
 
         // Xuất File Excel
-        public async Task<IActionResult> ExportToExcel(string workOrder = "", string defectCode = "", string employerCode = "", string operation = "", string fromInsDateTime = "", string toInsDateTime = "")
+        public async Task<IActionResult> ExportToExcel(string workOrder = "", string defectCode = "", string defectName = "", string employerCode = "", string operation = "", string fromInsDateTime = "", string toInsDateTime = "")
         {
             var query = _context.SVN_Defect_Record_History.AsQueryable();
 
@@ -55,6 +55,9 @@ namespace DefectManagement.Controllers
 
             if (!string.IsNullOrEmpty(defectCode))
                 query = query.Where(x => x.Defect_Code.Contains(defectCode));
+
+            if (!string.IsNullOrEmpty(defectName))
+                query = query.Where(x => x.Defect_Name.Contains(defectName));
 
             if (!string.IsNullOrEmpty(employerCode))
                 query = query.Where(x => x.Employer_code.Contains(employerCode));
@@ -86,7 +89,7 @@ namespace DefectManagement.Controllers
                 ws.Style.Font.FontSize = 11;
 
                 // Header
-                string[] headers = { "ID", "Work Order", "Item Code", "Defect Code", "Qty NG", "INS DateTime", "Operation", "Employer Code", "Employer Name", "Note", "Image Error", "Time Line" };
+                string[] headers = { "ID", "Work Order", "Item Code", "Defect Code", "Defect Name", "Qty NG", "INS DateTime", "Operation", "Employer Code", "Employer Name", "Note", "Image Error", "Time Line" };
                 for (int i = 0; i < headers.Length; i++)
                 {
                     var cell = ws.Cell(currentRow, i + 1);
@@ -106,14 +109,15 @@ namespace DefectManagement.Controllers
                     ws.Cell(currentRow, 2).Value = item.Work_order;
                     ws.Cell(currentRow, 3).Value = item.Item_code;
                     ws.Cell(currentRow, 4).Value = item.Defect_Code;
-                    ws.Cell(currentRow, 5).Value = item.Qty_NG;
-                    ws.Cell(currentRow, 6).Value = item.INSDatetime;
-                    ws.Cell(currentRow, 7).Value = item.Operation;
-                    ws.Cell(currentRow, 8).Value = item.Employer_code;
-                    ws.Cell(currentRow, 9).Value = item.Employer_name;
-                    ws.Cell(currentRow, 10).Value = item.Note;
-                    ws.Cell(currentRow, 11).Value = item.Image_error;
-                    ws.Cell(currentRow, 12).Value = item.Time_line?.ToString("yyyy-MM-dd HH:mm:ss");
+                    ws.Cell(currentRow, 5).Value = item.Defect_Name;
+                    ws.Cell(currentRow, 6).Value = item.Qty_NG;
+                    ws.Cell(currentRow, 7).Value = item.INSDatetime;
+                    ws.Cell(currentRow, 8).Value = item.Operation;
+                    ws.Cell(currentRow, 9).Value = item.Employer_code;
+                    ws.Cell(currentRow, 10).Value = item.Employer_name;
+                    ws.Cell(currentRow, 11).Value = item.Note;
+                    ws.Cell(currentRow, 12).Value = item.Image_error;
+                    ws.Cell(currentRow, 13).Value = item.Time_line?.ToString("yyyy-MM-dd HH:mm:ss");
                 }
 
                 // Canh giữa các cột số và ngày
@@ -136,7 +140,7 @@ namespace DefectManagement.Controllers
         }
 
 
-        public async Task<IActionResult> Result(string workOrder = "", string defectCode = "", string employerCode = "", string operation = "", string fromInsDateTime = "", string toInsDateTime = "")
+        public async Task<IActionResult> Result(string workOrder = "", string defectCode = "", string defectName = "", string employerCode = "", string operation = "", string fromInsDateTime = "", string toInsDateTime = "")
         {
             try
             {
@@ -145,25 +149,31 @@ namespace DefectManagement.Controllers
 
                 if (!string.IsNullOrEmpty(workOrder))
                 {
-                    sql += " AND (Work_order LIKE {" + parameters.Count + "} OR Work_order IS NULL)";
+                    sql += " AND (Work_order LIKE {" + parameters.Count + "})";
                     parameters.Add($"%{workOrder}%");
                 }
 
                 if (!string.IsNullOrEmpty(defectCode))
                 {
-                    sql += " AND (Defect_code LIKE {" + parameters.Count + "} OR Defect_code IS NULL)";
+                    sql += " AND (Defect_code LIKE {" + parameters.Count + "})";
                     parameters.Add($"%{defectCode}%");
+                }
+
+                if (!string.IsNullOrEmpty(defectName))
+                {
+                    sql += " AND (Defect_name LIKE {" + parameters.Count + "})";
+                    parameters.Add($"%{defectName}%");
                 }
 
                 if (!string.IsNullOrEmpty(employerCode))
                 {
-                    sql += " AND (Employer_code LIKE {" + parameters.Count + "} OR Employer_code IS NULL)";
+                    sql += " AND (Employer_code LIKE {" + parameters.Count + "})";
                     parameters.Add($"%{employerCode}%");
                 }
 
                 if (!string.IsNullOrEmpty(operation))
                 {
-                    sql += " AND (Operation LIKE {" + parameters.Count + "} OR Operation IS NULL)";
+                    sql += " AND (Operation LIKE {" + parameters.Count + "})";
                     parameters.Add($"%{operation}%");
                 }
 
@@ -191,6 +201,7 @@ namespace DefectManagement.Controllers
                 // Truyền giá trị filter ra View
                 ViewBag.WorkOrder = workOrder ?? "";
                 ViewBag.DefectCode = defectCode ?? "";
+                ViewBag.DefectName = defectName ?? "";
                 ViewBag.EmployerCode = employerCode ?? "";
                 ViewBag.Operation = operation ?? "";
                 ViewBag.FromInsDateTime = fromInsDateTime ?? "";
@@ -202,6 +213,7 @@ namespace DefectManagement.Controllers
                 ViewBag.ErrorMessage = $"Lỗi: {ex.Message}";
                 ViewBag.WorkOrder = workOrder ?? "";
                 ViewBag.DefectCode = defectCode ?? "";
+                ViewBag.DefectName = defectName ?? "";
                 ViewBag.EmployerCode = employerCode ?? "";
                 ViewBag.Operation = operation ?? "";
                 ViewBag.FromInsDateTime = fromInsDateTime ?? "";
@@ -271,10 +283,11 @@ namespace DefectManagement.Controllers
 
                 // Gọi stored procedure với parameters
                 await _context.Database.ExecuteSqlRawAsync(
-                    "EXEC [dbo].[SVN_InsertDefectReport] {0}, {1}, {2}, {3}, {4}, {5}, {6}, {7}, {8}, {9}, {10}",
+                    "EXEC [dbo].[SVN_InsertDefectReport] {0}, {1}, {2}, {3}, {4}, {5}, {6}, {7}, {8}, {9}, {10}, {11}",
                     model.Work_order ?? "",
                     model.Item_code ?? "",
                     model.Defect_Code ?? "",
+                    model.Defect_Name ?? "",
                     model.Qty_NG,
                     DateTime.Now.ToString("yyyyMMdd"),
                     model.Operation ?? "",
