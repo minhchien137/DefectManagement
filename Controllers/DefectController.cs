@@ -54,7 +54,7 @@ namespace DefectManagement.Controllers
                 query = query.Where(x => x.Work_order.Contains(workOrder));
 
             if (!string.IsNullOrEmpty(defectCode))
-                query = query.Where(x => x.Item_code.Contains(defectCode));
+                query = query.Where(x => x.Defect_Code.Contains(defectCode));
 
             if (!string.IsNullOrEmpty(employerCode))
                 query = query.Where(x => x.Employer_code.Contains(employerCode));

@@ -107,10 +107,10 @@
                                 </a>
 
                                  <a style="margin-left: 9px;" href="@Url.Action("ExportToExcel", "Defect", new { 
-                                    workOrder = ViewBag.WorkOrder, 
-                                    defectCode = ViewBag.DefectCode, 
-                                    employerCode = ViewBag.EmployerCode, 
-                                    operation = ViewBag.Operation,
+                                    workOrder = @ViewBag.WorkOrder, 
+                                    defectCode = @ViewBag.DefectCode, 
+                                    employerCode = @ViewBag.EmployerCode, 
+                                    operation = @ViewBag.Operation,
                                     fromInsDateTime = @ViewBag.FromInsDateTime,
                                     toInsDateTime = @ViewBag.ToInsDateTime
         

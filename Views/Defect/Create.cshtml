@@ -15,10 +15,13 @@
             <div class="form-group">
                 <label class="form-label">SVN Code</label>
                 <input id="Employer_code" name="Employer_code" class="form-control" placeholder="Nhập mã SVN..." />
+                <div id="nameEmployerDisplay"
+                    style="margin-top: 5px; font-weight: bold; color: #1976d2; font-size: 0.85rem;">
+                </div>
                 <div style="margin-top: 5px;">
                     <button type="button"
                         style="width:60px; height:30px; border:none; font-size:14px; color:white; border-radius:6px; background-color:#fa6d6d;"
-                        onclick="deleteField('Employer_code', this)">Xóa</button>
+                        onclick="deleteSVNField('Employer_code', this)">Xóa</button>
                 </div>
             </div>
 
@@ -31,7 +34,7 @@
                 <div style="margin-top: 5px;">
                     <button type="button"
                         style="width:60px; height:30px; border:none; font-size:14px; color:white; border-radius:6px; background-color:#fa6d6d;"
-                        onclick="deleteField('WorkOrder', this)">Xóa</button>
+                        onclick="deleteWorkOrderField('WorkOrder', this)">Xóa</button>
                 </div>
             </div>
 
@@ -41,9 +44,6 @@
                     <option value="">-- Chọn Operation --</option>
                 </select>
                 <div style="margin-top: 5px;">
-                    @* <button type="button"
-                        style="width:60px; height:30px; border:none; font-size:14px; color:white; border-radius:6px; background-color:#fa6d6d;"
-                        onclick="deleteField('operation', this)">Xóa</button> *@
                 </div>
             </div>
 
@@ -113,6 +113,7 @@
     <script>
 
         let currentProductCode = ""; // lưu productCode từ Odoo API
+        let currentNameEmployer = ""; // lưu nameEmployer từ Odoo API
         let selectedFile = null; // lưu file đã chọn
 
         // Toast Notification Function
@@ -135,11 +136,11 @@
             }
 
             toast.innerHTML = `
-                                                                                                                                                                                                                                                                                        <span class="toast-icon">${icon}</span>
-                                                                                                                                                                                                                                                                                        ${message}
-                                                                                                                                                                                                                                                                                        <button class="toast-close" onclick="closeToast(this)">&times;</button>
-                                                                                                                                                                                                                                                                                        <div class="toast-progress"></div>
-                                                                                                                                                                                                                                                                                    `;
+                                                                                                                                                                                                                                                                                                                                                                                            <span class="toast-icon">${icon}</span>
+                                                                                                                                                                                                                                                                                                                                                                                            ${message}
+                                                                                                                                                                                                                                                                                                                                                                                            <button class="toast-close" onclick="closeToast(this)">&times;</button>
+                                                                                                                                                                                                                                                                                                                                                                                            <div class="toast-progress"></div>
+                                                                                                                                                                                                                                                                                                                                                                                        `;
 
             toastContainer.appendChild(toast);
 
@@ -284,6 +285,47 @@
                 }
             });
 
+            // Gọi API khi blur khỏi SVN Code
+
+            $('#Employer_code').on('blur', function () {
+                const nameEmployer = $(this).val();
+                const nameEmployerDisplay = $("#nameEmployerDisplay");
+
+
+
+                if (nameEmployer && nameEmployer.length < 7) {
+                    currentNameEmployer = "";
+                    nameEmployerDisplay.text("");
+                    showToast("Bạn phải nhập SVN Code ít nhất 7 ký tự!", 'error', 2000);
+                    return;
+                }
+
+                if (nameEmployer) {
+                    $.ajax({
+                        url: '/api/Odoo/SearchName',
+                        type: 'GET',
+                        data: { nameEmployer: nameEmployer },
+                        success: function (res) {
+                            if (res && res.nameEmployer) {
+                                currentNameEmployer = res.nameEmployer;
+                                nameEmployerDisplay.text("Tên nhân viên : " + currentNameEmployer);
+                                console.log("✅ Lấy tên nhân viên :", currentNameEmployer);
+                            } else {
+                                currentNameEmployer = "";
+                                nameEmployerDisplay.text(""); // Xóa kết quả cũ
+                                showToast("Nhập sai mã SVN Code rồi!", 'error', 2000);
+                            }
+                        },
+                        error: function (err) {
+                            currentNameEmployer = "";
+                            console.error("❌ API Odoo lỗi:", err);
+                            nameEmployerDisplay.text(""); // Xóa kết quả cũ
+                            showToast("Nhập sai mã SVN Code rồi!", 'error', 2000);
+                        }
+                    });
+                }
+            });
+
             // Initialize Select2 for dropdowns
             $('#operation').select2({
                 placeholder: "Tìm kiếm Operation...",
@@ -411,7 +453,7 @@
                     $codeSelect.empty().append('<option value="">-- Chọn Code --</option>');
                     $codeSelect.prop('disabled', false).trigger('change.select2');
                     @* showToast("Lỗi khi tải dữ liệu defect codes!", 'error', 2000); *@
-                                                                                                                                                                                                                                                                                        }
+                                                                                                                                                                                                                                                                                                                                                                                            }
             });
 
             // Code change handler
@@ -465,6 +507,7 @@
             formData.append('Item_code', currentProductCode);
             formData.append('Operation', operation);
             formData.append('Defect_Code', defectCode);
+            formData.append('Employer_name', currentNameEmployer);
             formData.append('Qty_NG', qtyNG);
             formData.append('Note', document.getElementById("Note").value || '');
 
@@ -521,9 +564,24 @@
 
 
 
-        // xóa nhỏ
-        function deleteField(fieldId, button) {
+        // xóa nhỏ SVN Code
+        function deleteSVNField(fieldId, button) {
             localStorage.removeItem(fieldId);
+            document.getElementById("nameEmployerDisplay").innerHTML = "";
+            const field = document.getElementById(fieldId);
+            if (field) {
+                field.value = '';
+                if ($(field).hasClass('select2-hidden-accessible')) {
+                    $(field).val(null).trigger('change');
+                }
+            }
+        }
+
+
+        // xóa nhỏ Work Order
+        function deleteWorkOrderField(fieldId, button) {
+            localStorage.removeItem(fieldId);
+            document.getElementById("productionCodeDisplay").innerHTML = "";
             const field = document.getElementById(fieldId);
             if (field) {
                 field.value = '';
