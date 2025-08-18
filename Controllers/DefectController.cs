@@ -76,8 +76,8 @@ namespace DefectManagement.Controllers
                 query = query.Where(x => x.INSDatetime.CompareTo(formattedDate) <= 0);
             }
 
-
-            var data = await query.OrderByDescending(x => x.Time_line).ToListAsync();
+            // Sắp xếp bản ghi theo thời gian ASC
+            var data = await query.OrderBy(x => x.Time_line).ToListAsync();
 
             using (var workbook = new XLWorkbook())
             {
@@ -140,63 +140,64 @@ namespace DefectManagement.Controllers
         }
 
 
-        public async Task<IActionResult> Result(string workOrder = "", string defectCode = "", string defectName = "", string employerCode = "", string operation = "", string fromInsDateTime = "", string toInsDateTime = "")
+        // Updated Result method with server-side pagination
+        public async Task<IActionResult> Result(string workOrder = "", string defectCode = "", string defectName = "",
+            string employerCode = "", string operation = "", string fromInsDateTime = "", string toInsDateTime = "",
+            int page = 1, int pageSize = 25)
         {
             try
             {
-                var sql = "SELECT * FROM SVN_Defect_Record_History WHERE 1=1";
-                var parameters = new List<object>();
+                var query = _context.SVN_Defect_Record_History.AsQueryable();
 
+                // Apply filters
                 if (!string.IsNullOrEmpty(workOrder))
-                {
-                    sql += " AND (Work_order LIKE {" + parameters.Count + "})";
-                    parameters.Add($"%{workOrder}%");
-                }
+                    query = query.Where(x => x.Work_order.Contains(workOrder));
 
                 if (!string.IsNullOrEmpty(defectCode))
-                {
-                    sql += " AND (Defect_code LIKE {" + parameters.Count + "})";
-                    parameters.Add($"%{defectCode}%");
-                }
+                    query = query.Where(x => x.Defect_Code.Contains(defectCode));
 
                 if (!string.IsNullOrEmpty(defectName))
-                {
-                    sql += " AND (Defect_name LIKE {" + parameters.Count + "})";
-                    parameters.Add($"%{defectName}%");
-                }
+                    query = query.Where(x => x.Defect_Name.Contains(defectName));
 
                 if (!string.IsNullOrEmpty(employerCode))
-                {
-                    sql += " AND (Employer_code LIKE {" + parameters.Count + "})";
-                    parameters.Add($"%{employerCode}%");
-                }
+                    query = query.Where(x => x.Employer_code.Contains(employerCode));
 
                 if (!string.IsNullOrEmpty(operation))
-                {
-                    sql += " AND (Operation LIKE {" + parameters.Count + "})";
-                    parameters.Add($"%{operation}%");
-                }
+                    query = query.Where(x => x.Operation.Contains(operation));
 
                 if (!string.IsNullOrEmpty(fromInsDateTime) && DateTime.TryParse(fromInsDateTime, out var fromDate))
                 {
                     var formattedDate = fromDate.ToString("yyyyMMdd");
-                    sql += " AND (INSDatetime >= {" + parameters.Count + "})";
-                    parameters.Add(formattedDate);
+                    query = query.Where(x => x.INSDatetime.CompareTo(formattedDate) >= 0);
                 }
 
                 if (!string.IsNullOrEmpty(toInsDateTime) && DateTime.TryParse(toInsDateTime, out var toDate))
                 {
                     var formattedDate = toDate.ToString("yyyyMMdd");
-                    sql += " AND (INSDatetime <= {" + parameters.Count + "})";
-                    parameters.Add(formattedDate);
+                    query = query.Where(x => x.INSDatetime.CompareTo(formattedDate) <= 0);
                 }
 
-                sql += " ORDER BY Time_line DESC";
+                // Get total count for pagination
+                var totalRecords = await query.CountAsync();
 
-                var results = await _context.SVN_Defect_Record_History
-                    .FromSqlRaw(sql, parameters.ToArray())
+                // Apply sorting and pagination
+                var results = await query
+                    .OrderByDescending(x => x.Time_line)
+                    .Skip((page - 1) * pageSize)
+                    .Take(pageSize)
                     .AsNoTracking()
                     .ToListAsync();
+
+                // Calculate pagination info
+                var totalPages = (int)Math.Ceiling((double)totalRecords / pageSize);
+
+                // Pass pagination data to view
+                ViewBag.CurrentPage = page;
+                ViewBag.TotalPages = totalPages;
+                ViewBag.PageSize = pageSize;
+                ViewBag.TotalRecords = totalRecords;
+                ViewBag.HasPreviousPage = page > 1;
+                ViewBag.HasNextPage = page < totalPages;
 
                 // Truyền giá trị filter ra View
                 ViewBag.WorkOrder = workOrder ?? "";
@@ -206,6 +207,7 @@ namespace DefectManagement.Controllers
                 ViewBag.Operation = operation ?? "";
                 ViewBag.FromInsDateTime = fromInsDateTime ?? "";
                 ViewBag.ToInsDateTime = toInsDateTime ?? "";
+
                 return View(results);
             }
             catch (Exception ex)
@@ -218,6 +220,14 @@ namespace DefectManagement.Controllers
                 ViewBag.Operation = operation ?? "";
                 ViewBag.FromInsDateTime = fromInsDateTime ?? "";
                 ViewBag.ToInsDateTime = toInsDateTime ?? "";
+
+                // Set default pagination values for error case
+                ViewBag.CurrentPage = 1;
+                ViewBag.TotalPages = 0;
+                ViewBag.PageSize = pageSize;
+                ViewBag.TotalRecords = 0;
+                ViewBag.HasPreviousPage = false;
+                ViewBag.HasNextPage = false;
 
                 return View(new List<SVN_Defect_Record_History>());
             }

@@ -80,3 +80,5 @@ wwwroot\uploads\defect-images\20250813_135525_21a973da277a4360a7ce922bcb41f74c.p
 wwwroot\uploads\defect-images\20250814_095037_009726431eb64c938d19fe3c48bc6f7d.png
 wwwroot\uploads\defect-images\20250814_095258_84971721e430450f8ee6b9119f6097f5.png
 wwwroot\uploads\defect-images\20250814_111034_7901068a9fdc4342ad2419b5085909db.png
+wwwroot\uploads\defect-images\20250815_144055_61ea8fb4fe994569a553f74773e699ea.png
+wwwroot\uploads\defect-images\20250815_145813_78cb9557674746b6a6d6a224c4f264ed.jpg
