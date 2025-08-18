@@ -1,4 +1,7 @@
 ﻿using System.Text;
+using ClosedXML.Excel;
+using System.IO;
+using System.Threading.Tasks;
 using DefectManagement.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
@@ -9,10 +12,12 @@ namespace DefectManagement.Controllers
     public class DefectController : Controller
     {
         private readonly ApplicationDbContext _context;
+        private readonly IWebHostEnvironment _webHostEnvironment;
 
-        public DefectController(ApplicationDbContext context, HttpClient httpClient)
+        public DefectController(ApplicationDbContext context, IWebHostEnvironment webHostEnvironment)
         {
             _context = context;
+            _webHostEnvironment = webHostEnvironment;
         }
 
         // Get danh sách operation
@@ -39,8 +44,198 @@ namespace DefectManagement.Controllers
             return Json(codes);
         }
 
+
+        // Xuất File Excel
+        public async Task<IActionResult> ExportToExcel(string workOrder = "", string defectCode = "", string defectName = "", string employerCode = "", string operation = "", string fromInsDateTime = "", string toInsDateTime = "")
+        {
+            var query = _context.SVN_Defect_Record_History.AsQueryable();
+
+            if (!string.IsNullOrEmpty(workOrder))
+                query = query.Where(x => x.Work_order.Contains(workOrder));
+
+            if (!string.IsNullOrEmpty(defectCode))
+                query = query.Where(x => x.Defect_Code.Contains(defectCode));
+
+            if (!string.IsNullOrEmpty(defectName))
+                query = query.Where(x => x.Defect_Name.Contains(defectName));
+
+            if (!string.IsNullOrEmpty(employerCode))
+                query = query.Where(x => x.Employer_code.Contains(employerCode));
+
+            if (!string.IsNullOrEmpty(operation))
+                query = query.Where(x => x.Operation.Contains(operation));
+
+            if (!string.IsNullOrEmpty(fromInsDateTime) && DateTime.TryParse(fromInsDateTime, out var fromDate))
+            {
+                var formattedDate = fromDate.ToString("yyyyMMdd");
+                query = query.Where(x => x.INSDatetime.CompareTo(formattedDate) >= 0);
+            }
+            if (!string.IsNullOrEmpty(toInsDateTime) && DateTime.TryParse(toInsDateTime, out var toDate))
+            {
+                var formattedDate = toDate.ToString("yyyyMMdd");
+                query = query.Where(x => x.INSDatetime.CompareTo(formattedDate) <= 0);
+            }
+
+            // Sắp xếp bản ghi theo thời gian ASC
+            var data = await query.OrderBy(x => x.Time_line).ToListAsync();
+
+            using (var workbook = new XLWorkbook())
+            {
+                var ws = workbook.Worksheets.Add("DefectHistory");
+                var currentRow = 1;
+
+                // Font mặc định
+                ws.Style.Font.FontName = "Times New Roman";
+                ws.Style.Font.FontSize = 11;
+
+                // Header
+                string[] headers = { "ID", "Work Order", "Item Code", "Defect Code", "Defect Name", "Qty NG", "INS DateTime", "Operation", "Employer Code", "Employer Name", "Note", "Image Error", "Time Line" };
+                for (int i = 0; i < headers.Length; i++)
+                {
+                    var cell = ws.Cell(currentRow, i + 1);
+                    cell.Value = headers[i];
+                    cell.Style.Font.Bold = true;
+                    cell.Style.Fill.BackgroundColor = XLColor.FromTheme(XLThemeColor.Accent1, 0.5);
+                    cell.Style.Font.FontColor = XLColor.White;
+                    cell.Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
+                    cell.Style.Alignment.Vertical = XLAlignmentVerticalValues.Center;
+                }
+
+                // Data
+                foreach (var item in data)
+                {
+                    currentRow++;
+                    ws.Cell(currentRow, 1).Value = item.Id;
+                    ws.Cell(currentRow, 2).Value = item.Work_order;
+                    ws.Cell(currentRow, 3).Value = item.Item_code;
+                    ws.Cell(currentRow, 4).Value = item.Defect_Code;
+                    ws.Cell(currentRow, 5).Value = item.Defect_Name;
+                    ws.Cell(currentRow, 6).Value = item.Qty_NG;
+                    ws.Cell(currentRow, 7).Value = item.INSDatetime;
+                    ws.Cell(currentRow, 8).Value = item.Operation;
+                    ws.Cell(currentRow, 9).Value = item.Employer_code;
+                    ws.Cell(currentRow, 10).Value = item.Employer_name;
+                    ws.Cell(currentRow, 11).Value = item.Note;
+                    ws.Cell(currentRow, 12).Value = item.Image_error;
+                    ws.Cell(currentRow, 13).Value = item.Time_line?.ToString("yyyy-MM-dd HH:mm:ss");
+                }
+
+                // Canh giữa các cột số và ngày
+                ws.Columns(1, 1).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center; // ID
+                ws.Columns(5, 5).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center; // Qty NG
+                ws.Columns(6, 6).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center; // INS DateTime
+                ws.Columns(12, 12).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center; // Time Line
+
+                // Auto fit column width
+                ws.Columns().AdjustToContents();
+
+                using (var stream = new MemoryStream())
+                {
+                    workbook.SaveAs(stream);
+                    return File(stream.ToArray(),
+                        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                        "DefectHistory.xlsx");
+                }
+            }
+        }
+
+
+        // Updated Result method with server-side pagination
+        public async Task<IActionResult> Result(string workOrder = "", string defectCode = "", string defectName = "",
+            string employerCode = "", string operation = "", string fromInsDateTime = "", string toInsDateTime = "",
+            int page = 1, int pageSize = 25)
+        {
+            try
+            {
+                var query = _context.SVN_Defect_Record_History.AsQueryable();
+
+                // Apply filters
+                if (!string.IsNullOrEmpty(workOrder))
+                    query = query.Where(x => x.Work_order.Contains(workOrder));
+
+                if (!string.IsNullOrEmpty(defectCode))
+                    query = query.Where(x => x.Defect_Code.Contains(defectCode));
+
+                if (!string.IsNullOrEmpty(defectName))
+                    query = query.Where(x => x.Defect_Name.Contains(defectName));
+
+                if (!string.IsNullOrEmpty(employerCode))
+                    query = query.Where(x => x.Employer_code.Contains(employerCode));
+
+                if (!string.IsNullOrEmpty(operation))
+                    query = query.Where(x => x.Operation.Contains(operation));
+
+                if (!string.IsNullOrEmpty(fromInsDateTime) && DateTime.TryParse(fromInsDateTime, out var fromDate))
+                {
+                    var formattedDate = fromDate.ToString("yyyyMMdd");
+                    query = query.Where(x => x.INSDatetime.CompareTo(formattedDate) >= 0);
+                }
+
+                if (!string.IsNullOrEmpty(toInsDateTime) && DateTime.TryParse(toInsDateTime, out var toDate))
+                {
+                    var formattedDate = toDate.ToString("yyyyMMdd");
+                    query = query.Where(x => x.INSDatetime.CompareTo(formattedDate) <= 0);
+                }
+
+                // Get total count for pagination
+                var totalRecords = await query.CountAsync();
+
+                // Apply sorting and pagination
+                var results = await query
+                    .OrderByDescending(x => x.Time_line)
+                    .Skip((page - 1) * pageSize)
+                    .Take(pageSize)
+                    .AsNoTracking()
+                    .ToListAsync();
+
+                // Calculate pagination info
+                var totalPages = (int)Math.Ceiling((double)totalRecords / pageSize);
+
+                // Pass pagination data to view
+                ViewBag.CurrentPage = page;
+                ViewBag.TotalPages = totalPages;
+                ViewBag.PageSize = pageSize;
+                ViewBag.TotalRecords = totalRecords;
+                ViewBag.HasPreviousPage = page > 1;
+                ViewBag.HasNextPage = page < totalPages;
+
+                // Truyền giá trị filter ra View
+                ViewBag.WorkOrder = workOrder ?? "";
+                ViewBag.DefectCode = defectCode ?? "";
+                ViewBag.DefectName = defectName ?? "";
+                ViewBag.EmployerCode = employerCode ?? "";
+                ViewBag.Operation = operation ?? "";
+                ViewBag.FromInsDateTime = fromInsDateTime ?? "";
+                ViewBag.ToInsDateTime = toInsDateTime ?? "";
+
+                return View(results);
+            }
+            catch (Exception ex)
+            {
+                ViewBag.ErrorMessage = $"Lỗi: {ex.Message}";
+                ViewBag.WorkOrder = workOrder ?? "";
+                ViewBag.DefectCode = defectCode ?? "";
+                ViewBag.DefectName = defectName ?? "";
+                ViewBag.EmployerCode = employerCode ?? "";
+                ViewBag.Operation = operation ?? "";
+                ViewBag.FromInsDateTime = fromInsDateTime ?? "";
+                ViewBag.ToInsDateTime = toInsDateTime ?? "";
+
+                // Set default pagination values for error case
+                ViewBag.CurrentPage = 1;
+                ViewBag.TotalPages = 0;
+                ViewBag.PageSize = pageSize;
+                ViewBag.TotalRecords = 0;
+                ViewBag.HasPreviousPage = false;
+                ViewBag.HasNextPage = false;
+
+                return View(new List<SVN_Defect_Record_History>());
+            }
+        }
+
+
         [HttpPost]
-        public IActionResult Create([FromBody] SVN_Defect_Record_History model)
+        public async Task<IActionResult> Create(SVN_Defect_Record_History model, IFormFile imageFile)
         {
             try
             {
@@ -55,42 +250,68 @@ namespace DefectManagement.Controllers
                     return Json(new { success = false, message = "Vui lòng điền đầy đủ thông tin bắt buộc!" });
                 }
 
-                var historyRecord = new SVN_Defect_Record_History
+                string imagePath = null;
+
+                // Xử lý upload ảnh nếu có
+                if (imageFile != null && imageFile.Length > 0)
                 {
-                    Work_order = model.Work_order,
-                    Item_code = model.Item_code,
-                    Defect_Code = model.Defect_Code,
-                    Qty_NG = model.Qty_NG,
-                    INSDatetime = DateTime.Now.ToString("yyyyMMdd"),
-                    Operation = model.Operation,
-                    Employer_code = model.Employer_code,
-                    Employer_name = model.Employer_name ?? "",
-                    Note = model.Note
-                };
+                    // Kiểm tra định dạng file
+                    var allowedExtensions = new[] { ".jpg", ".jpeg", ".png", ".gif", ".bmp" };
+                    var fileExtension = Path.GetExtension(imageFile.FileName).ToLower();
 
-                // lưu vào bảng Defect_History
-                _context.SVN_Defect_Record_History.Add(historyRecord);
-                _context.SaveChanges();
-                Console.WriteLine("History saved successfully");
+                    if (!allowedExtensions.Contains(fileExtension))
+                    {
+                        return Json(new { success = false, message = "Chỉ cho phép upload ảnh với định dạng: jpg, jpeg, png, gif, bmp" });
+                    }
 
-                var insertSql = @"INSERT INTO SVN_Defect_Record_Copy 
-                                (Item_code, Defect_Code, Qty_NG, INSDatetime, Operation, Employer_code, Employer_name) 
-                                VALUES ({0}, {1}, {2}, {3}, {4}, {5}, {6})";
+                    // Kiểm tra kích thước file (5MB)
+                    if (imageFile.Length > 5 * 1024 * 1024)
+                    {
+                        return Json(new { success = false, message = "Kích thước ảnh không được vượt quá 5MB" });
+                    }
 
-                // lưu vào bảng Defect_Record
-                _context.Database.ExecuteSqlRaw(insertSql,
-                    historyRecord.Item_code,
-                    historyRecord.Defect_Code,
-                    historyRecord.Qty_NG,
-                    historyRecord.INSDatetime,
-                    historyRecord.Operation,
-                    historyRecord.Employer_code,
-                    historyRecord.Employer_name ?? "");
+                    // Tạo thư mục uploads/defect-images nếu chưa có
+                    var uploadsFolder = Path.Combine(_webHostEnvironment.WebRootPath, "uploads", "defect-images");
+                    if (!Directory.Exists(uploadsFolder))
+                    {
+                        Directory.CreateDirectory(uploadsFolder);
+                    }
 
-                Console.WriteLine("Copy saved successfully");
+                    // Tạo tên file unique
+                    var fileName = $"{DateTime.Now:yyyyMMdd_HHmmss}_{Guid.NewGuid():N}{fileExtension}";
+                    var filePath = Path.Combine(uploadsFolder, fileName);
+
+                    // Lưu file
+                    using (var stream = new FileStream(filePath, FileMode.Create))
+                    {
+                        await imageFile.CopyToAsync(stream);
+                    }
+
+                    // Lưu đường dẫn relative để hiển thị trên web
+                    imagePath = $"/uploads/defect-images/{fileName}";
+                }
+
+                // Gọi stored procedure với parameters
+                await _context.Database.ExecuteSqlRawAsync(
+                    "EXEC [dbo].[SVN_InsertDefectReport] {0}, {1}, {2}, {3}, {4}, {5}, {6}, {7}, {8}, {9}, {10}, {11}",
+                    model.Work_order ?? "",
+                    model.Item_code ?? "",
+                    model.Defect_Code ?? "",
+                    model.Defect_Name ?? "",
+                    model.Qty_NG,
+                    DateTime.Now.ToString("yyyyMMdd"),
+                    model.Operation ?? "",
+                    model.Employer_code ?? "",
+                    model.Employer_name ?? "",
+                    model.Note ?? "",
+                    imagePath ?? "",
+                    DateTime.Now);
+
+                Console.WriteLine("Stored procedure executed successfully");
 
                 return Json(new { success = true, message = "Lưu thông tin thành công!", data = model });
             }
+
             catch (Exception ex)
             {
                 return Json(new { success = false, message = $"Có lỗi xảy ra: {ex.Message}" });

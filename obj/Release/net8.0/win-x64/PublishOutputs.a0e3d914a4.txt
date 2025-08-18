@@ -329,6 +329,11 @@ D:\DefectManagement\DefectManagement\obj\Release\net8.0\win-x64\PubTmp\Out\msqui
 D:\DefectManagement\DefectManagement\obj\Release\net8.0\win-x64\PubTmp\Out\aspnetcorev2_inprocess.dll
 D:\DefectManagement\DefectManagement\obj\Release\net8.0\win-x64\PubTmp\Out\Azure.Core.dll
 D:\DefectManagement\DefectManagement\obj\Release\net8.0\win-x64\PubTmp\Out\Azure.Identity.dll
+D:\DefectManagement\DefectManagement\obj\Release\net8.0\win-x64\PubTmp\Out\ClosedXML.dll
+D:\DefectManagement\DefectManagement\obj\Release\net8.0\win-x64\PubTmp\Out\ClosedXML.Parser.dll
+D:\DefectManagement\DefectManagement\obj\Release\net8.0\win-x64\PubTmp\Out\DocumentFormat.OpenXml.dll
+D:\DefectManagement\DefectManagement\obj\Release\net8.0\win-x64\PubTmp\Out\DocumentFormat.OpenXml.Framework.dll
+D:\DefectManagement\DefectManagement\obj\Release\net8.0\win-x64\PubTmp\Out\ExcelNumberFormat.dll
 D:\DefectManagement\DefectManagement\obj\Release\net8.0\win-x64\PubTmp\Out\Microsoft.Bcl.AsyncInterfaces.dll
 D:\DefectManagement\DefectManagement\obj\Release\net8.0\win-x64\PubTmp\Out\Microsoft.Data.SqlClient.dll
 D:\DefectManagement\DefectManagement\obj\Release\net8.0\win-x64\PubTmp\Out\Microsoft.EntityFrameworkCore.dll
@@ -346,9 +351,12 @@ D:\DefectManagement\DefectManagement\obj\Release\net8.0\win-x64\PubTmp\Out\Micro
 D:\DefectManagement\DefectManagement\obj\Release\net8.0\win-x64\PubTmp\Out\Microsoft.SqlServer.Server.dll
 D:\DefectManagement\DefectManagement\obj\Release\net8.0\win-x64\PubTmp\Out\Microsoft.Win32.SystemEvents.dll
 D:\DefectManagement\DefectManagement\obj\Release\net8.0\win-x64\PubTmp\Out\Newtonsoft.Json.dll
+D:\DefectManagement\DefectManagement\obj\Release\net8.0\win-x64\PubTmp\Out\RBush.dll
+D:\DefectManagement\DefectManagement\obj\Release\net8.0\win-x64\PubTmp\Out\SixLabors.Fonts.dll
 D:\DefectManagement\DefectManagement\obj\Release\net8.0\win-x64\PubTmp\Out\System.Configuration.ConfigurationManager.dll
 D:\DefectManagement\DefectManagement\obj\Release\net8.0\win-x64\PubTmp\Out\System.Drawing.Common.dll
 D:\DefectManagement\DefectManagement\obj\Release\net8.0\win-x64\PubTmp\Out\System.IdentityModel.Tokens.Jwt.dll
+D:\DefectManagement\DefectManagement\obj\Release\net8.0\win-x64\PubTmp\Out\System.IO.Packaging.dll
 D:\DefectManagement\DefectManagement\obj\Release\net8.0\win-x64\PubTmp\Out\System.Memory.Data.dll
 D:\DefectManagement\DefectManagement\obj\Release\net8.0\win-x64\PubTmp\Out\System.Runtime.Caching.dll
 D:\DefectManagement\DefectManagement\obj\Release\net8.0\win-x64\PubTmp\Out\System.Security.Cryptography.ProtectedData.dll

@@ -137,3 +137,12 @@ D:\DefectManagement\DefectManagement\obj\Debug\net8.0\DefectManagement.pdb
 D:\DefectManagement\DefectManagement\obj\Debug\net8.0\DefectManagement.genruntimeconfig.cache
 D:\DefectManagement\DefectManagement\obj\Debug\net8.0\ref\DefectManagement.dll
 D:\DefectManagement\DefectManagement\bin\Debug\net8.0\Newtonsoft.Json.dll
+D:\DefectManagement\DefectManagement\obj\Debug\net8.0\DefectManagement.sourcelink.json
+D:\DefectManagement\DefectManagement\bin\Debug\net8.0\ClosedXML.dll
+D:\DefectManagement\DefectManagement\bin\Debug\net8.0\ClosedXML.Parser.dll
+D:\DefectManagement\DefectManagement\bin\Debug\net8.0\DocumentFormat.OpenXml.dll
+D:\DefectManagement\DefectManagement\bin\Debug\net8.0\DocumentFormat.OpenXml.Framework.dll
+D:\DefectManagement\DefectManagement\bin\Debug\net8.0\ExcelNumberFormat.dll
+D:\DefectManagement\DefectManagement\bin\Debug\net8.0\RBush.dll
+D:\DefectManagement\DefectManagement\bin\Debug\net8.0\SixLabors.Fonts.dll
+D:\DefectManagement\DefectManagement\bin\Debug\net8.0\System.IO.Packaging.dll
