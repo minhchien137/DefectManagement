@@ -101,10 +101,16 @@ namespace DefectManagement.Controllers
                     cell.Style.Alignment.Vertical = XLAlignmentVerticalValues.Center;
                 }
 
+                // Thiết lập chiều cao hàng cho data (để ảnh hiển thị đẹp)
+                const double rowHeight = 70;
+
                 // Data
                 foreach (var item in data)
                 {
                     currentRow++;
+
+                    ws.Row(currentRow).Height = rowHeight;
+
                     ws.Cell(currentRow, 1).Value = item.Id;
                     ws.Cell(currentRow, 2).Value = item.Work_order;
                     ws.Cell(currentRow, 3).Value = item.Item_code;
@@ -116,21 +122,82 @@ namespace DefectManagement.Controllers
                     ws.Cell(currentRow, 9).Value = item.Employer_code;
                     ws.Cell(currentRow, 10).Value = item.Employer_name;
                     ws.Cell(currentRow, 11).Value = item.Note;
-                    ws.Cell(currentRow, 12).Value = item.Image_error;
+
+                    if (!string.IsNullOrEmpty(item.Image_error))
+                    {
+                        try
+                        {
+                            string imagePath = "";
+                            if (item.Image_error.StartsWith("/uploads/"))
+                            {
+                                imagePath = Path.Combine(_webHostEnvironment.WebRootPath, item.Image_error.TrimStart('/').Replace('/', Path.DirectorySeparatorChar));
+                            }
+                            else
+                            {
+                                imagePath = item.Image_error;
+                            }
+
+                            if (System.IO.File.Exists(imagePath))
+                            {
+
+                                var picture = ws.AddPicture(imagePath);
+                                picture.MoveTo(ws.Cell(currentRow, 12), 8, 5);
+                                picture.WithSize(100, 70);
+
+
+                                var imageCell = ws.Cell(currentRow, 12);
+                                imageCell.Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
+                                imageCell.Style.Alignment.Vertical = XLAlignmentVerticalValues.Center;
+                            }
+                            else
+                            {
+
+                                ws.Cell(currentRow, 12).Value = "No image";
+                                ws.Cell(currentRow, 12).Style.Font.FontColor = XLColor.Gray;
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+
+                            ws.Cell(currentRow, 12).Value = $"Error: {ex.Message}";
+                            ws.Cell(currentRow, 12).Style.Font.FontColor = XLColor.Red;
+                        }
+                    }
+                    else
+                    {
+                        ws.Cell(currentRow, 12).Value = "No image";
+                        ws.Cell(currentRow, 12).Style.Font.FontColor = XLColor.Gray;
+                    }
+
                     ws.Cell(currentRow, 13).Value = item.Time_line?.ToString("yyyy-MM-dd HH:mm:ss");
                 }
 
                 // Canh giữa các cột số và ngày
                 ws.Columns(1, 1).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center; // ID
-                ws.Columns(5, 5).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center; // Qty NG
-                ws.Columns(6, 6).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center; // INS DateTime
-                ws.Columns(12, 12).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center; // Time Line
+                ws.Columns(6, 6).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center; // Qty NG
+                ws.Columns(7, 7).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center; // INS DateTime
+                ws.Columns(12, 12).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center; // Image Error
+                ws.Columns(13, 13).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center; // Time Line
 
-                // Auto fit column width
-                ws.Columns().AdjustToContents();
+
+                ws.Column(1).Width = 5;
+                ws.Column(2).Width = 15;
+                ws.Column(3).Width = 15;
+                ws.Column(4).Width = 12;
+                ws.Column(5).Width = 20;
+                ws.Column(6).Width = 8;
+                ws.Column(7).Width = 12;
+                ws.Column(8).Width = 15;
+                ws.Column(9).Width = 12;
+                ws.Column(10).Width = 18;
+                ws.Column(11).Width = 25;
+                ws.Column(12).Width = 15;
+                ws.Column(13).Width = 18;
+
 
                 using (var stream = new MemoryStream())
                 {
+
                     workbook.SaveAs(stream);
                     return File(stream.ToArray(),
                         "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
