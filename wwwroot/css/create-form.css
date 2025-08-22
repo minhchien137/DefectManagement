@@ -402,7 +402,7 @@
         border: 1px solid #bbdefb;
     }
 
-    /* ===============CONFIRM MODAL =============================== */
+    /* ===============CONFIRM MODAL ===============================
 
         .confirmation-modal {
             display: none;
@@ -507,7 +507,7 @@
                 transform: translate(-50%, -50%) scale(1);
             }
         }
-    
+     */
 
     /* ========== TOAST NOTIFICATION STYLES ========== */
 
