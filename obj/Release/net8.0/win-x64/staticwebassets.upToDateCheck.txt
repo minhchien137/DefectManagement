@@ -1,6 +1,6 @@
-wwwroot\css\create-form.css
 wwwroot\css\site.css
 wwwroot\favicon.ico
+wwwroot\images\logo.png
 wwwroot\js\site.js
 wwwroot\lib\bootstrap\dist\css\bootstrap-grid.css
 wwwroot\lib\bootstrap\dist\css\bootstrap-grid.css.map
@@ -77,9 +77,6 @@ wwwroot\uploads\defect-images\20250813_133821_b62fff24f97c40fd8e0071f64ff6fb39.p
 wwwroot\uploads\defect-images\20250813_133830_46499d97679e4977951146ad99fbb896.png
 wwwroot\uploads\defect-images\20250813_134118_5c6700f84561429e8ba92692ae150dbb.png
 wwwroot\uploads\defect-images\20250813_135525_21a973da277a4360a7ce922bcb41f74c.png
-wwwroot\uploads\defect-images\20250814_095037_009726431eb64c938d19fe3c48bc6f7d.png
-wwwroot\uploads\defect-images\20250814_095258_84971721e430450f8ee6b9119f6097f5.png
-wwwroot\uploads\defect-images\20250814_111034_7901068a9fdc4342ad2419b5085909db.png
 wwwroot\uploads\defect-images\20250813_140300_fd6a8801680d47f58335c1cca78553ae.png
 wwwroot\uploads\defect-images\20250813_145310_776548f13de24657bbb6f26b0b060d53.jpeg
 wwwroot\uploads\defect-images\20250813_145336_c4c403e6ad334cb68b02693d839022b5.jpeg
@@ -114,6 +111,9 @@ wwwroot\uploads\defect-images\20250813_162340_537041e40c6f46a1a4cf1ac6f85b87e4.j
 wwwroot\uploads\defect-images\20250814_093750_50312ea0c9a145898ca0fc0457f6a1c7.jpeg
 wwwroot\uploads\defect-images\20250814_093827_47b0768f239947359dce64990753250a.jpeg
 wwwroot\uploads\defect-images\20250814_093908_d017ab929d9d41ecb91519518799376d.jpeg
+wwwroot\uploads\defect-images\20250814_095037_009726431eb64c938d19fe3c48bc6f7d.png
+wwwroot\uploads\defect-images\20250814_095258_84971721e430450f8ee6b9119f6097f5.png
+wwwroot\uploads\defect-images\20250814_111034_7901068a9fdc4342ad2419b5085909db.png
 wwwroot\uploads\defect-images\20250814_131254_5b7d695d259945959a79f43b1b2fe889.jpeg
 wwwroot\uploads\defect-images\20250814_131916_5c41f86664d841f3aa9922339026961e.jpeg
 wwwroot\uploads\defect-images\20250814_162801_74be8175f5ed4b2c8fa2b25d7292117c.jpeg
@@ -200,3 +200,4 @@ wwwroot\uploads\defect-images\20250821_165459_6219365057984513a01c0962640d9822.j
 wwwroot\uploads\defect-images\20250821_165706_23b1bfd8125648829caf8b2dfeeab16b.jpg
 wwwroot\uploads\defect-images\20250821_170243_1c208da29736499b85f03e8e27b09f82.jpg
 wwwroot\uploads\defect-images\20250821_170317_740b1ac4a18c4ab8a66b3fd3a593d470.jpg
+wwwroot\css\create-form.css

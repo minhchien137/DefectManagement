@@ -234,7 +234,7 @@ public class OdooController : ControllerBase
         // Tạo body JSON bằng chuỗi nội suy ($@"") như bạn muốn
         string finalJson = $@"
             {{
-                ""id"": 555555555,
+                ""id"": 31,
                 ""jsonrpc"": ""2.0"",
                 ""method"": ""call"",
                 ""params"": {{
@@ -257,11 +257,9 @@ public class OdooController : ControllerBase
                         ""domain"": [
                             ""&"",
                             [""picking_type_id.active"", ""="", true],
-                            ""&"",
-                            [""state"", ""in"", [""draft"", ""confirmed"", ""progress"", ""to_close""]],
                             ""|"",
                             [""name"", ""ilike"", ""{productionCode}""],
-                            [""origin"", ""ilike"", ""xxxxxxxxx""]
+                            [""origin"", ""ilike"", ""xxxxxx""]
                         ],
                         ""fields"": [
                             ""activity_exception_decoration"", ""activity_exception_icon"", ""activity_state"",
@@ -289,7 +287,7 @@ public class OdooController : ControllerBase
             };
 
             // Thêm cookie cho request này
-            var cookie = "frontend_lang=en_US; cids=1; session_id=aa3054475768115f9a742ff9131aab5c9c548b3c";
+            var cookie = "frontend_lang=vi_VN; session_id=cc48f91eadf3641a29d02e5b5ebd7e623ceeac11; cids=1";
             request.Headers.Add("Cookie", cookie);
 
             var response = await _httpClient.SendAsync(request);

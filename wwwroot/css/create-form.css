@@ -404,7 +404,7 @@
 
     /* ===============CONFIRM MODAL ===============================
 
-        .confirmation-modal {
+         .confirmation-modal {
             display: none;
             position: fixed;
             z-index: 1000;
@@ -507,7 +507,7 @@
                 transform: translate(-50%, -50%) scale(1);
             }
         }
-     */
+
 
     /* ========== TOAST NOTIFICATION STYLES ========== */
 
