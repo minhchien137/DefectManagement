@@ -91,7 +91,7 @@ public class OdooController : ControllerBase
             };
 
 
-            var cookie = "frontend_lang=vi_VN; session_id=cc48f91eadf3641a29d02e5b5ebd7e623ceeac11; cids=1";
+            var cookie = "frontend_lang=vi_VN; session_id=133fd5f6d4e5d853cfd9a222544f9a0583ba52a9; cids=1";
             request.Headers.Add("Cookie", cookie);
             request.Headers.Add("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36");
             request.Headers.Add("Accept", "application/json, text/javascript, */*; q=0.01");
@@ -289,7 +289,7 @@ public class OdooController : ControllerBase
             };
 
             // Thêm cookie cho request này
-            var cookie = "frontend_lang=en_US; cids=1; session_id=aa3054475768115f9a742ff9131aab5c9c548b3c";
+            var cookie = "frontend_lang=en_US; cids=1; session_id=133fd5f6d4e5d853cfd9a222544f9a0583ba52a9";
             request.Headers.Add("Cookie", cookie);
 
             var response = await _httpClient.SendAsync(request);

@@ -1,0 +1,1192 @@
+@model List<DefectManagement.Models.SVN_Defect_Record_History>
+@{
+    ViewData["Title"] = "Báo Cáo Defect";
+
+    int currentPage   = ViewBag.CurrentPage     ?? 1;
+    int pageSize      = ViewBag.PageSize        ?? 10;
+    int totalRecords  = ViewBag.TotalRecords    ?? 0;
+    int totalPages    = ViewBag.TotalPages      ?? 1;
+    bool hasPrevPage  = ViewBag.HasPreviousPage ?? false;
+    bool hasNextPage  = ViewBag.HasNextPage     ?? false;
+
+    string fromDate   = ViewBag.FromDate   ?? "";
+    string toDate     = ViewBag.ToDate     ?? "";
+    string workOrder  = ViewBag.WorkOrder  ?? "";
+    string operation  = ViewBag.Operation  ?? "";
+    string defectCode = ViewBag.DefectCode ?? "";
+    string itemCode   = ViewBag.ItemCode   ?? "";
+
+    var pageSizeOptions = new[] { 5, 10, 25, 50, 100 };
+
+    // Lấy danh sách unique để làm dropdown filter
+    var allModels = Model ?? new List<DefectManagement.Models.SVN_Defect_Record_History>();
+
+    // Lấy toàn bộ list để populate dropdown (từ ViewBag nếu có)
+    var allWorkOrders  = ViewBag.AllWorkOrders  as List<string>             ?? new List<string>();
+    var allOperations  = ViewBag.AllOperations  as List<string>             ?? new List<string>();
+    var allDefectCodes = ViewBag.AllDefectCodes as List<string>             ?? new List<string>();
+    var allDefectNames = ViewBag.AllDefectNames as Dictionary<string,string> ?? new Dictionary<string,string>();
+    var allItemCodes   = ViewBag.AllItemCodes   as List<string>             ?? new List<string>();
+}
+
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"]</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet" />
+    <!-- Tom Select – searchable dropdown -->
+    <link href="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/css/tom-select.bootstrap5.min.css" rel="stylesheet" />
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
+    <style>
+        /* ===== BASE ===== */
+        *, *::before, *::after { box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f0f4f8;
+            font-size: 14px;
+            overflow-x: hidden;
+        }
+
+        /* ===== PAGE HEADER – BLUE ===== */
+        .page-header {
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 60%, #3b82f6 100%);
+            color: #fff;
+            padding: 1.2rem 1.5rem;
+            border-radius: 12px;
+            margin-bottom: 1.4rem;
+            box-shadow: 0 4px 18px rgba(42,82,152,.4);
+        }
+        .page-header h1 {
+            font-size: clamp(1rem, 3.5vw, 1.6rem);
+            margin: 0;
+            font-weight: 700;
+            letter-spacing: .3px;
+        }
+
+        /* ===== CARD BOX ===== */
+        .card-box {
+            background: #fff;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,.07);
+            padding: 1rem 1.2rem;
+            margin-bottom: 1.25rem;
+        }
+
+        /* ===== KPI CARDS ===== */
+        .stats-card {
+            background: #fff;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,.07);
+            padding: 1rem 1.2rem;
+            margin-bottom: 1rem;
+            transition: transform .2s, box-shadow .2s;
+            border-left: 4px solid transparent;
+        }
+        .stats-card:hover { transform: translateY(-3px); box-shadow: 0 6px 18px rgba(0,0,0,.13); }
+        .stats-card.kpi-blue    { border-left-color: #2a5298; }
+        .stats-card.kpi-danger  { border-left-color: #e53e3e; }
+        .stats-card.kpi-warning { border-left-color: #d69e2e; }
+        .stats-card h5 { font-size: .8rem; color: #718096; margin-bottom: 4px; font-weight: 600; text-transform: uppercase; letter-spacing: .5px; }
+        .stats-card h2 { font-size: clamp(1.5rem, 4vw, 2.1rem); margin: 0; font-weight: 700; }
+
+        /* ===== CHART CONTAINERS ===== */
+        .chart-box {
+            background: #fff;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,.07);
+            padding: 1.1rem 1.2rem;
+            margin-bottom: 1.25rem;
+            height: 370px;
+            display: flex;
+            flex-direction: column;
+        }
+        .chart-box canvas { flex: 1; min-height: 0; width: 100% !important; }
+        .chart-box h4 { font-size: .88rem; font-weight: 700; margin-bottom: .5rem; flex-shrink: 0; color: #2d3748; }
+
+        .trend-box {
+            background: #fff;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,.07);
+            padding: 1.1rem 1.2rem;
+            margin-bottom: 1.25rem;
+            height: 400px;
+            display: flex;
+            flex-direction: column;
+        }
+        .trend-box canvas { flex: 1; min-height: 0; width: 100% !important; }
+        .trend-box h4 { font-size: .88rem; font-weight: 700; margin-bottom: .5rem; flex-shrink: 0; color: #2d3748; }
+
+        /* ===== TABLE ===== */
+        .table-defect thead th {
+            background: #2a5298;
+            color: #fff;
+            font-size: 12px;
+            font-weight: 600;
+            vertical-align: middle;
+            white-space: nowrap;
+            border-color: #3b65b8;
+        }
+        .table-defect td { vertical-align: middle; font-size: 12px; border-color: #e8ecf4; }
+        .table-defect tbody tr { cursor: pointer; transition: background .12s; }
+        .table-defect tbody tr:hover { background-color: #eef3ff !important; }
+        .table-defect tbody tr:nth-child(even) { background-color: #f8faff; }
+
+        /* ===== BADGE OPERATION ===== */
+        .badge-op {
+            background: #2a5298;
+            color: #fff;
+            padding: 2px 9px;
+            border-radius: 20px;
+            font-size: 10px;
+            white-space: nowrap;
+            font-weight: 600;
+        }
+
+        /* ===== BADGE DEFECT CODE ===== */
+        .badge-dc {
+            background: #fef3c7;
+            color: #92400e;
+            padding: 2px 8px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 700;
+            border: 1px solid #f59e0b;
+        }
+
+        /* ===== IMAGE THUMB ===== */
+        .img-thumb {
+            width: 44px; height: 44px;
+            object-fit: cover;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: transform .2s;
+            border: 2px solid #cbd5e0;
+        }
+        .img-thumb:hover { transform: scale(1.22); }
+
+        /* ===== EXPORT BTN ===== */
+        .btn-export {
+            background: linear-gradient(135deg, #059669 0%, #34d399 100%);
+            color: #fff !important;
+            border: none;
+            padding: .45rem 1.3rem;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 13px;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            transition: transform .15s, box-shadow .15s;
+            box-shadow: 0 2px 6px rgba(5,150,105,.3);
+        }
+        .btn-export:hover { transform: translateY(-2px); box-shadow: 0 5px 14px rgba(5,150,105,.4); }
+
+        /* ===== FILTER BUTTONS ===== */
+        .btn-filter-apply {
+            background: linear-gradient(135deg, #1e3c72 0%, #3b82f6 100%);
+            color: #fff;
+            border: none;
+            padding: .42rem 1.2rem;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 13px;
+            cursor: pointer;
+            transition: transform .15s, box-shadow .15s;
+        }
+        .btn-filter-apply:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(30,60,114,.35); }
+        .btn-filter-clear {
+            background: #fff;
+            color: #4a5568;
+            border: 1.5px solid #cbd5e0;
+            padding: .42rem 1.2rem;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 13px;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            transition: border-color .15s, color .15s;
+        }
+        .btn-filter-clear:hover { border-color: #e53e3e; color: #e53e3e; }
+
+        /* ===== SORT ===== */
+        .sortable { cursor: pointer; user-select: none; }
+        .sortable:hover { background-color: #3b65b8 !important; }
+        .sort-icon { font-size: 9px; margin-left: 3px; opacity: .8; }
+
+        /* ===== PAGINATION ===== */
+        .page-link { font-size: 13px; color: #2a5298; }
+        .page-item.active .page-link { background-color: #2a5298; border-color: #2a5298; }
+
+        /* ===== DETAIL MODAL ===== */
+        .detail-section-title {
+            font-size: 12.5px; font-weight: 700; color: #2a5298;
+            border-bottom: 2px solid #2a5298;
+            padding-bottom: 4px; margin-bottom: 10px;
+        }
+        .history-tbl th { font-size: 11px; background-color: #ebf0fb !important; color: #2d3748; }
+        .history-tbl td { font-size: 11px; }
+        .modal-img-full { width: 100%; max-height: 460px; object-fit: contain; }
+        .modal-header-blue { background: linear-gradient(135deg,#1e3c72,#2a5298); color:#fff; }
+
+        /* ===== FILTER CARD – overflow visible để dropdown không bị cắt ===== */
+        .filter-card {
+            overflow: visible !important;
+            position: relative;
+            z-index: 200;
+        }
+        /* Đảm bảo tất cả row/col bên trong cũng không cắt overflow */
+        .filter-card .row,
+        .filter-card .col-6,
+        .filter-card .col-sm-4,
+        .filter-card .col-md-3,
+        .filter-card .col-lg-2 {
+            overflow: visible !important;
+        }
+
+        /* ===== TOM-SELECT custom ===== */
+        .ts-wrapper { overflow: visible !important; }
+        .ts-control {
+            border-radius: 6px !important;
+            border-color: #cbd5e0 !important;
+            font-size: 13px !important;
+            min-height: 31px !important;
+            padding: 3px 8px !important;
+        }
+        .ts-dropdown {
+            font-size: 13px;
+            z-index: 99999 !important;
+            box-shadow: 0 8px 24px rgba(0,0,0,.15) !important;
+            border: 1px solid #cbd5e0 !important;
+            border-radius: 8px !important;
+            max-height: 260px;
+            overflow-y: auto;
+        }
+        .ts-dropdown .option { padding: 6px 12px; }
+        .ts-dropdown .option:hover, .ts-dropdown .option.active { background: #ebf0fb !important; color: #2a5298 !important; }
+
+        /* ===== ANIMATIONS ===== */
+        @@keyframes fadeUp { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
+        .fade-up   { animation: fadeUp .4s ease-out both; }
+        .fade-up-2 { animation: fadeUp .4s .08s ease-out both; }
+        .fade-up-3 { animation: fadeUp .4s .16s ease-out both; }
+
+        /* ===== RESPONSIVE ===== */
+        @@media (max-width: 991.98px) {
+            .chart-box { height: 310px; }
+            .trend-box { height: 330px; }
+        }
+        @@media (max-width: 767.98px) {
+            .chart-box  { height: 280px; }
+            .trend-box  { height: 290px; }
+            .stats-card h2 { font-size: 1.5rem; }
+            .col-sm-hide { display: none !important; }
+        }
+        @@media (max-width: 575.98px) {
+            .chart-box { height: 260px; }
+            .trend-box { height: 270px; }
+            .filter-btns { flex-direction: column; }
+            .filter-btns > * { width: 100%; text-align: center; }
+        }
+    </style>
+</head>
+<body>
+<div class="container-fluid px-3 px-md-4 mt-3 pb-5">
+
+    <!-- ===== HEADER ===== -->
+    <div class="page-header fade-up">
+        <h1></i>Báo Cáo Defect</h1>
+    </div>
+
+    <!-- ===== ERROR ===== -->
+    @if (!string.IsNullOrEmpty(ViewBag.ErrorMessage as string))
+    {
+        <div class="alert alert-danger alert-dismissible fade show">
+            <i class="fas fa-exclamation-circle me-1"></i> @ViewBag.ErrorMessage
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <!-- ===== FILTER ===== -->
+    <div class="card-box filter-card fade-up-2">
+        <form method="get" asp-action="Report" id="filterForm">
+            <div class="row g-2 align-items-end">
+
+                <!-- Từ ngày -->
+                <div class="col-6 col-sm-4 col-md-3 col-lg-2">
+                    <label class="form-label fw-bold small mb-1">
+                        <i class="fas fa-calendar-alt" style="color:#2a5298"></i> Từ ngày
+                    </label>
+                    <input type="date" class="form-control form-control-sm" name="fromDate" value="@fromDate" />
+                </div>
+
+                <!-- Đến ngày -->
+                <div class="col-6 col-sm-4 col-md-3 col-lg-2">
+                    <label class="form-label fw-bold small mb-1">
+                        <i class="fas fa-calendar-alt" style="color:#2a5298"></i> Đến ngày
+                    </label>
+                    <input type="date" class="form-control form-control-sm" name="toDate" value="@toDate" />
+                </div>
+
+                <!-- Work Order – searchable select -->
+                <div class="col-6 col-sm-4 col-md-3 col-lg-2">
+                    <label class="form-label fw-bold small mb-1">
+                        <i class="fas fa-clipboard-list text-secondary"></i> Work Order
+                    </label>
+                    <select id="selWorkOrder" name="workOrder" class="form-select form-select-sm" autocomplete="off">
+                        <option value="">-- Tất cả --</option>
+                        @foreach (var w in allWorkOrders)
+                        {
+                            if (w == workOrder)
+                            {
+                                <option value="@w" selected="selected">@w</option>
+                            }
+                            else
+                            {
+                                <option value="@w">@w</option>
+                            }
+                        }
+                    </select>
+                </div>
+
+                <!-- Operation – searchable select -->
+                <div class="col-6 col-sm-4 col-md-3 col-lg-2">
+                    <label class="form-label fw-bold small mb-1">
+                        <i class="fas fa-cogs text-secondary"></i> Operation
+                    </label>
+                    <select id="selOperation" name="operation" class="form-select form-select-sm" autocomplete="off">
+                        <option value="">-- Tất cả --</option>
+                        @foreach (var op in allOperations)
+                        {
+                            if (op == operation)
+                            {
+                                <option value="@op" selected="selected">@op</option>
+                            }
+                            else
+                            {
+                                <option value="@op">@op</option>
+                            }
+                        }
+                    </select>
+                </div>
+
+                <!-- Defect Code – searchable select -->
+                <div class="col-6 col-sm-4 col-md-3 col-lg-2">
+                    <label class="form-label fw-bold small mb-1">
+                        <i class="fas fa-exclamation-circle" style="color:#d69e2e"></i> Defect Code
+                    </label>
+                    <select id="selDefectCode" name="defectCode" class="form-select form-select-sm" autocomplete="off">
+                        <option value="">-- Tất cả --</option>
+                        @foreach (var dc in allDefectCodes)
+                        {
+                            var dname  = allDefectNames.ContainsKey(dc) ? allDefectNames[dc] : "";
+                            var dlabel = string.IsNullOrEmpty(dname) ? dc : $"{dc} - {dname}";
+                            if (dc == defectCode)
+                            {
+                                <option value="@dc" selected="selected">@dlabel</option>
+                            }
+                            else
+                            {
+                                <option value="@dc">@dlabel</option>
+                            }
+                        }
+                    </select>
+                </div>
+
+                <!-- Bản ghi/trang -->
+                <div class="col-6 col-sm-4 col-md-3 col-lg-2">
+                    <label class="form-label fw-bold small mb-1">
+                        <i class="fas fa-list"></i> Bản ghi/trang
+                    </label>
+                    <select class="form-select form-select-sm" name="pageSize">
+                        @foreach (var ps in pageSizeOptions)
+                        {
+                            if (ps == pageSize)
+                            {
+                                <option value="@ps" selected="selected">@ps bản ghi</option>
+                            }
+                            else
+                            {
+                                <option value="@ps">@ps bản ghi</option>
+                            }
+                        }
+                    </select>
+                </div>
+
+                <!-- Buttons -->
+                <div class="col-12 col-md-6 col-lg-4 d-flex gap-2 flex-wrap filter-btns">
+                    <button type="submit" class="btn-filter-apply flex-fill" style="min-width:120px">
+                        <i class="fas fa-search me-1"></i> Lọc dữ liệu
+                    </button>
+                    <a href="@Url.Action("Report")" class="btn-filter-clear flex-fill" style="min-width:100px; justify-content:center;">
+                        <i class="fas fa-times"></i> Xóa lọc
+                    </a>
+                </div>
+
+            </div>
+        </form>
+    </div>
+
+    @if (totalRecords > 0)
+    {
+        <!-- ===== KPI ===== -->
+        <div class="row g-3 mb-1 fade-up-3">
+            <div class="col-12 col-sm-4">
+                <div class="stats-card kpi-blue">
+                    <h5><i class="fas fa-cogs me-1" style="color:#2a5298"></i>Tổng số Operation</h5>
+                    <h2 style="color:#2a5298">@ViewBag.TotalOperations</h2>
+                </div>
+            </div>
+            <div class="col-12 col-sm-4">
+                <div class="stats-card kpi-danger">
+                    <h5><i class="fas fa-list-alt me-1 text-danger"></i>Tổng Defect Records</h5>
+                    <h2 class="text-danger">@ViewBag.TotalRecords</h2>
+                </div>
+            </div>
+            <div class="col-12 col-sm-4">
+                <div class="stats-card kpi-warning">
+                    <h5><i class="fas fa-times-circle me-1" style="color:#d69e2e"></i>Tổng số lượng NG</h5>
+                    <h2 style="color:#d69e2e">@ViewBag.TotalQtyNG</h2>
+                </div>
+            </div>
+        </div>
+
+        <!-- ===== EXPORT ===== -->
+        <div class="mb-3 text-end">
+            <a href="@Url.Action("ExportDefectReport", new {
+                fromDate  = fromDate,  toDate    = toDate,
+                workOrder = workOrder, operation = operation,
+                defectCode = defectCode, itemCode = itemCode
+            })" class="btn-export">
+                <i class="fas fa-file-excel"></i> Xuất Excel
+            </a>
+        </div>
+
+        <!-- ===== CHARTS ROW 1 ===== -->
+        <div class="row g-3">
+            <div class="col-12 col-md-6 col-xl-4">
+                <div class="chart-box">
+                    <h4><i class="fas fa-chart-bar me-1" style="color:#2a5298"></i>Biểu đồ Defect theo operation</h4>
+                    <canvas id="operationChart"></canvas>
+                </div>
+            </div>
+            <div class="col-12 col-md-6 col-xl-4">
+                <div class="chart-box">
+                    <h4><i class="fas fa-chart-bar me-1 text-danger"></i>Biểu đồ Pareto Defect theo tên lỗi</h4>
+                    <canvas id="paretoChart"></canvas>
+                </div>
+            </div>
+            <div class="col-12 col-md-12 col-xl-4">
+                <div class="chart-box">
+                    <h4><i class="fas fa-chart-pie me-1 text-success"></i>Biểu đồ Top 10 Operation nhiều lỗi nhất</h4>
+                    <canvas id="pieChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- ===== CHART TREND ===== -->
+        <div class="row">
+            <div class="col-12">
+                <div class="trend-box">
+                    <h4>
+                        <i class="fas fa-chart-line me-1 text-info"></i> Defect Trend theo ngày
+                        <small class="text-muted fw-normal">&nbsp;— Moving Avg 7 ngày</small>
+                    </h4>
+                    <canvas id="trendChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- ===== DETAIL TABLE ===== -->
+        <div class="card-box">
+            <div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
+                <h5 class="mb-0" style="color:#2d3748">
+                    <i class="fas fa-table me-1" style="color:#2a5298"></i> Chi tiết Defect Records
+                    <span class="badge ms-1" style="background:#2a5298">@totalRecords bản ghi</span>
+                </h5>
+                <span class="text-muted small">Trang @currentPage / @totalPages</span>
+            </div>
+
+            <div class="table-responsive" style="max-height:520px; overflow-y:auto;">
+                <table class="table table-bordered table-hover table-defect mb-0" id="defectTable">
+                    <thead>
+                        <tr>
+                            <th style="width:38px" class="sortable" onclick="sortTable(0,this)">#<span class="sort-icon">⇅</span></th>
+                            <th class="sortable" onclick="sortTable(1,this)">Work Order<span class="sort-icon">⇅</span></th>
+                            <th class="sortable col-sm-hide" onclick="sortTable(2,this)">Item Code<span class="sort-icon">⇅</span></th>
+                            <th class="sortable" onclick="sortTable(3,this)">Defect Code<span class="sort-icon">⇅</span></th>
+                            <th class="sortable" onclick="sortTable(4,this)">Defect Name<span class="sort-icon">⇅</span></th>
+                            <th class="sortable text-center" style="width:68px" onclick="sortTable(5,this)">Qty NG<span class="sort-icon">⇅</span></th>
+                            <th class="sortable" onclick="sortTable(6,this)">Operation<span class="sort-icon">⇅</span></th>
+                            <th class="col-sm-hide">Employer</th>
+                            <th class="col-sm-hide">Note</th>
+                            <th class="text-center" style="width:58px">Image</th>
+                            <th class="sortable" onclick="sortTable(10,this)">Time Line<span class="sort-icon">⇅</span></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @{
+                            int stt = (currentPage - 1) * pageSize + 1;
+                        }
+                        @foreach (var item in Model)
+                        {
+                            <tr onclick="showDetail(@item.Id)" data-id="@item.Id">
+                                <td class="text-center text-muted small">@stt</td>
+                                <td class="text-nowrap">
+                                    <small class="fw-semibold" style="color:#2d3748">@item.Work_order</small>
+                                </td>
+                                <td class="col-sm-hide">
+                                    <small class="text-muted">@item.Item_code</small>
+                                </td>
+                                <td>
+                                    <span class="badge-dc">@item.Defect_Code</span>
+                                </td>
+                                <td style="color:#2d3748">@item.Defect_Name</td>
+                                <td class="text-center fw-bold" style="color:#e53e3e; font-size:13px">@item.Qty_NG</td>
+                                <td>
+                                    <span class="badge-op">@item.Operation</span>
+                                </td>
+                                <td class="col-sm-hide">
+                                    <small class="d-block fw-semibold" style="color:#4a5568">@item.Employer_code</small>
+                                    <small class="text-muted">@item.Employer_name</small>
+                                </td>
+                                <td class="col-sm-hide">
+                                    @if (!string.IsNullOrEmpty(item.Note))
+                                    {
+                                        <span class="text-muted small" title="@item.Note">
+                                            @(item.Note.Length > 35 ? item.Note.Substring(0, 35) + "…" : item.Note)
+                                        </span>
+                                    }
+                                </td>
+                                <td class="text-center">
+                                    @if (!string.IsNullOrEmpty(item.Image_error))
+                                    {
+                                        <img src="@item.Image_error" class="img-thumb"
+                                             onclick="event.stopPropagation(); showImage('@item.Image_error')"
+                                             onerror="this.style.display='none'" alt="img" />
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">—</span>
+                                    }
+                                </td>
+                                <td class="text-nowrap">
+                                    <small class="d-block" style="color:#4a5568">@item.Time_line?.ToString("dd/MM/yyyy")</small>
+                                    <small class="text-muted">@item.Time_line?.ToString("HH:mm:ss")</small>
+                                </td>
+                            </tr>
+                            stt++;
+                        }
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- ===== PAGINATION ===== -->
+            @if (totalPages > 1)
+            {
+                <div class="mt-3">
+                    <nav>
+                        <ul class="pagination pagination-sm justify-content-center flex-wrap gap-1 mb-1">
+                            <li class="page-item @(!hasPrevPage ? "disabled" : "")">
+                                <a class="page-link" href="@Url.Action("Report", new { page = 1, pageSize, fromDate, toDate, workOrder, operation, defectCode, itemCode })">
+                                    <i class="fas fa-angle-double-left"></i>
+                                </a>
+                            </li>
+                            <li class="page-item @(!hasPrevPage ? "disabled" : "")">
+                                <a class="page-link" href="@Url.Action("Report", new { page = currentPage - 1, pageSize, fromDate, toDate, workOrder, operation, defectCode, itemCode })">
+                                    <i class="fas fa-angle-left"></i>
+                                </a>
+                            </li>
+                            @{
+                                int startPage = Math.Max(1, currentPage - 3);
+                                int endPage   = Math.Min(totalPages, currentPage + 3);
+                            }
+                            @for (int p = startPage; p <= endPage; p++)
+                            {
+                                int pCopy = p;
+                                <li class="page-item @(pCopy == currentPage ? "active" : "")">
+                                    <a class="page-link" href="@Url.Action("Report", new { page = pCopy, pageSize, fromDate, toDate, workOrder, operation, defectCode, itemCode })">@pCopy</a>
+                                </li>
+                            }
+                            <li class="page-item @(!hasNextPage ? "disabled" : "")">
+                                <a class="page-link" href="@Url.Action("Report", new { page = currentPage + 1, pageSize, fromDate, toDate, workOrder, operation, defectCode, itemCode })">
+                                    <i class="fas fa-angle-right"></i>
+                                </a>
+                            </li>
+                            <li class="page-item @(!hasNextPage ? "disabled" : "")">
+                                <a class="page-link" href="@Url.Action("Report", new { page = totalPages, pageSize, fromDate, toDate, workOrder, operation, defectCode, itemCode })">
+                                    <i class="fas fa-angle-double-right"></i>
+                                </a>
+                            </li>
+                        </ul>
+                    </nav>
+                    <p class="text-center text-muted small mb-0">
+                        Hiển thị @((currentPage - 1) * pageSize + 1) – @Math.Min(currentPage * pageSize, totalRecords)
+                        trong tổng số @totalRecords bản ghi
+                    </p>
+                </div>
+            }
+        </div>
+    }
+    else
+    {
+        <div class="text-center py-5">
+            <i class="fas fa-inbox fa-4x text-muted mb-3 d-block"></i>
+            <p class="text-muted fs-5">Không có dữ liệu. Vui lòng điều chỉnh bộ lọc và thử lại.</p>
+        </div>
+    }
+
+</div>
+
+<!-- ===== MODAL: DETAIL ===== -->
+<div class="modal fade" id="detailModal" tabindex="-1">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable modal-fullscreen-lg-down">
+        <div class="modal-content">
+            <div class="modal-header py-2 modal-header-blue">
+                <h5 class="modal-title mb-0">
+                    <i class="fas fa-search-plus me-1"></i> Chi tiết Defect Record
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-3" id="detailModalBody">
+                <div class="text-center py-5">
+                    <div class="spinner-border" style="color:#2a5298"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ===== MODAL: IMAGE ===== -->
+<div class="modal fade" id="imageModal" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header py-2">
+                <h6 class="modal-title mb-0"><i class="fas fa-image me-1"></i> Ảnh lỗi</h6>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body text-center p-2">
+                <img id="fullImage" src="" class="modal-img-full" alt="defect image" />
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/js/tom-select.complete.min.js"></script>
+
+<script>
+/* ============================================================
+   TOM SELECT – searchable dropdowns
+   Dùng onDropdownOpen để reposition dropdown về fixed position
+   → thoát khỏi mọi overflow, không bị che, không xuống cuối trang
+============================================================ */
+function makeTomSelect(selector, extraOpts) {
+    const el = document.querySelector(selector);
+    if (!el) return;
+    const ts = new TomSelect(selector, Object.assign({
+        allowEmptyOption : true,
+        placeholder      : '-- Tất cả --',
+        maxOptions       : 1000,
+        dropdownParent   : 'body'
+    }, extraOpts || {}));
+    return ts;
+}
+
+makeTomSelect('#selWorkOrder');
+makeTomSelect('#selOperation');
+makeTomSelect('#selItemCode');
+
+// Defect Code: custom render hiển thị badge code + tên
+makeTomSelect('#selDefectCode', {
+    render: {
+        option: function(data, escape) {
+            const raw  = data.text || '';
+            const dash = raw.indexOf(' - ');
+            if (dash >= 0) {
+                const code = escape(raw.slice(0, dash).trim());
+                const name = escape(raw.slice(dash + 3).trim());
+                return '<div style="display:flex;align-items:center;gap:8px;padding:5px 10px">'
+                     + '<span style="background:#fef3c7;color:#92400e;border:1px solid #f59e0b;'
+                     +       'border-radius:5px;padding:1px 7px;font-size:11px;font-weight:700;'
+                     +       'white-space:nowrap;min-width:32px;text-align:center">' + code + '</span>'
+                     + '<span style="color:#374151;font-size:12.5px">' + name + '</span>'
+                     + '</div>';
+            }
+            return '<div style="padding:5px 10px">' + escape(raw) + '</div>';
+        },
+        item: function(data, escape) {
+            return '<div>' + escape(data.text || '') + '</div>';
+        }
+    }
+});
+
+/* ============================================================
+   TABLE SORT
+============================================================ */
+const sortDir = {};
+function sortTable(col, thEl) {
+    const tbody = document.getElementById('defectTable')?.tBodies[0];
+    if (!tbody) return;
+    const rows = Array.from(tbody.rows);
+    sortDir[col] = !sortDir[col];
+    document.querySelectorAll('#defectTable .sort-icon').forEach(el => el.textContent = '⇅');
+    if (thEl) thEl.querySelector('.sort-icon').textContent = sortDir[col] ? '▲' : '▼';
+    rows.sort((a, b) => {
+        const va = a.cells[col]?.innerText.trim() || '';
+        const vb = b.cells[col]?.innerText.trim() || '';
+        const na = parseFloat(va), nb = parseFloat(vb);
+        if (!isNaN(na) && !isNaN(nb)) return sortDir[col] ? na - nb : nb - na;
+        return sortDir[col] ? va.localeCompare(vb, 'vi') : vb.localeCompare(va, 'vi');
+    });
+    rows.forEach(r => tbody.appendChild(r));
+}
+
+/* ============================================================
+   DETAIL POPUP
+============================================================ */
+function showDetail(id) {
+    const modalEl = document.getElementById('detailModal');
+    const modal   = bootstrap.Modal.getOrCreateInstance(modalEl);
+    document.getElementById('detailModalBody').innerHTML =
+        '<div class="text-center py-5"><div class="spinner-border" style="color:#2a5298"></div></div>';
+    modal.show();
+
+    fetch(`/Defect/GetDefectDetail?id=${id}`)
+        .then(r => r.json())
+        .then(res => {
+            if (!res.success) {
+                document.getElementById('detailModalBody').innerHTML =
+                    `<div class="alert alert-danger">${res.message}</div>`;
+                return;
+            }
+            const d = res.data;
+            const imgHtml = d.image_error
+                ? `<img src="${d.image_error}" class="img-fluid rounded mb-2 w-100"
+                          style="max-height:280px;object-fit:contain;cursor:pointer"
+                          onclick="showImage('${d.image_error}')" />`
+                : `<div class="text-center text-muted py-4 border rounded mb-2 bg-light">
+                       <i class="fas fa-image fa-3x mb-2 d-block"></i>Không có ảnh
+                   </div>`;
+
+            const buildTbl = (cols, bodyHtml) => !bodyHtml
+                ? '<p class="text-muted small">Không có bản ghi</p>'
+                : `<div class="table-responsive" style="max-height:190px;overflow-y:auto">
+                   <table class="table table-sm table-bordered history-tbl mb-0">
+                       <thead><tr>${cols.map(c => `<th>${c}</th>`).join('')}</tr></thead>
+                       <tbody>${bodyHtml}</tbody>
+                   </table></div>`;
+
+            const woRows = res.sameWO.map(r =>
+                `<tr>
+                    <td><span class="badge-dc">${r.defect_Code||''}</span></td>
+                    <td>${r.defect_Name||''}</td>
+                    <td class="text-center fw-bold" style="color:#e53e3e">${r.qty_NG||0}</td>
+                    <td><span class="badge-op">${r.operation||''}</span></td>
+                    <td>${r.employer_name||''}</td>
+                    <td class="text-nowrap small">${r.timeLine||''}</td>
+                </tr>`).join('');
+
+            const defRows = res.sameDefectInWO.map(r =>
+                `<tr>
+                    <td class="text-center fw-bold" style="color:#e53e3e">${r.qty_NG||0}</td>
+                    <td>${r.employer_name||''}</td>
+                    <td>${r.note||''}</td>
+                    <td class="text-nowrap small">${r.timeLine||''}</td>
+                </tr>`).join('');
+
+            document.getElementById('detailModalBody').innerHTML = `
+            <div class="row g-3">
+                <div class="col-12 col-md-5">
+                    ${imgHtml}
+                    <div class="detail-section-title">
+                        <i class="fas fa-info-circle me-1"></i>Thông tin chính
+                    </div>
+                    <table class="table table-sm table-borderless mb-0" style="font-size:12.5px">
+                        <tr><td class="text-muted fw-bold" style="width:42%;white-space:nowrap">Work Order:</td>
+                            <td><strong>${d.work_order||''}</strong></td></tr>
+                        <tr><td class="text-muted fw-bold">Item Code:</td>
+                            <td>${d.item_code||''}</td></tr>
+                        <tr><td class="text-muted fw-bold">Defect Code:</td>
+                            <td><span class="badge-dc">${d.defect_Code||''}</span></td></tr>
+                        <tr><td class="text-muted fw-bold">Defect Name:</td>
+                            <td><strong style="color:#e53e3e">${d.defect_Name||''}</strong></td></tr>
+                        <tr><td class="text-muted fw-bold">Qty NG:</td>
+                            <td><strong style="color:#e53e3e;font-size:1.2rem">${d.qty_NG||0}</strong></td></tr>
+                        <tr><td class="text-muted fw-bold">Operation:</td>
+                            <td><span class="badge-op">${d.operation||''}</span></td></tr>
+                        <tr><td class="text-muted fw-bold">Employer:</td>
+                            <td>${d.employer_code||''} – ${d.employer_name||''}</td></tr>
+                        <tr><td class="text-muted fw-bold">Note:</td>
+                            <td>${d.note||'—'}</td></tr>
+                        <tr><td class="text-muted fw-bold">INS Date:</td>
+                            <td>${d.inSDatetime||''}</td></tr>
+                        <tr><td class="text-muted fw-bold">Time Line:</td>
+                            <td><strong>${d.timeLine||''}</strong></td></tr>
+                    </table>
+                </div>
+                <div class="col-12 col-md-7">
+                    <div class="detail-section-title">
+                        <i class="fas fa-history me-1"></i>Lịch sử cùng Work Order
+                        <span class="badge bg-secondary ms-1">${res.sameWO.length}</span>
+                    </div>
+                    ${buildTbl(['Defect Code','Defect Name','Qty NG','Operation','Employer','Time'], woRows)}
+                    <div class="detail-section-title mt-3">
+                        <i class="fas fa-bug me-1"></i>Cùng Defect Code
+                        <em style="color:#e53e3e">[${d.defect_Code}]</em> trong WO này
+                        <span class="badge bg-secondary ms-1">${res.sameDefectInWO.length}</span>
+                    </div>
+                    ${buildTbl(['Qty NG','Employer','Note','Time'], defRows)}
+                </div>
+            </div>`;
+        })
+        .catch(err => {
+            document.getElementById('detailModalBody').innerHTML =
+                `<div class="alert alert-danger">Lỗi: ${err.message}</div>`;
+        });
+}
+
+/* ============================================================
+   IMAGE FULLSIZE
+============================================================ */
+function showImage(src) {
+    document.getElementById('fullImage').src = src;
+    bootstrap.Modal.getOrCreateInstance(document.getElementById('imageModal')).show();
+}
+</script>
+
+@if (totalRecords > 0)
+{
+    <script>
+    /* ============================================================
+       DATA FROM SERVER
+    ============================================================ */
+    const opLabels  = @Html.Raw(ViewBag.ChartOperationLabels ?? "[]");
+    const opQtyNG   = @Html.Raw(ViewBag.ChartOperationQtyNG  ?? "[]");
+    const opCounts  = @Html.Raw(ViewBag.ChartOperationCounts ?? "[]");
+
+    const paretoLabels = @Html.Raw(ViewBag.ParetoLabels     ?? "[]");
+    const paretoQtyNG  = @Html.Raw(ViewBag.ParetoQtyNG      ?? "[]");
+    const paretoCum    = @Html.Raw(ViewBag.ParetoCumulative ?? "[]");
+
+    // Pie chart – top 10 operations (thay vì defect name)
+    const pieLabels = @Html.Raw(ViewBag.PieLabels ?? "[]");
+    const pieVals   = @Html.Raw(ViewBag.PieData   ?? "[]");
+
+    const trendDates  = @Html.Raw(ViewBag.DailyDates     ?? "[]");
+    const trendQtyNG  = @Html.Raw(ViewBag.DailyQtyNG     ?? "[]");
+    const trendCounts = @Html.Raw(ViewBag.DailyCounts    ?? "[]");
+    const movingAvg   = @Html.Raw(ViewBag.DailyMovingAvg ?? "[]");
+
+    /* ============================================================
+       HELPERS
+    ============================================================ */
+    const PALETTE = [
+        '#2563eb','#e53e3e','#d69e2e','#059669','#7c3aed',
+        '#db2777','#ea580c','#0891b2','#65a30d','#4338ca',
+        '#be185d','#0369a1','#b45309','#15803d','#6d28d9'
+    ];
+    function rgba(hex, a) {
+        const r = parseInt(hex.slice(1,3),16),
+              g = parseInt(hex.slice(3,5),16),
+              b = parseInt(hex.slice(5,7),16);
+        return `rgba(${r},${g},${b},${a})`;
+    }
+
+    /* ============================================================
+       HELPER – gộp operation label
+       Walter-WSS03-00290  → Walter
+       Injection_POP       → POP (chỉ lấy phần sau _ cuối nếu có _)
+       POP                 → POP
+    ============================================================ */
+    function groupOpLabel(label) {
+        if (!label) return 'N/A';
+        // Nếu có dấu - thì lấy phần trước dấu - đầu tiên
+        if (label.includes('-')) return label.split('-')[0].trim();
+        // Nếu có dấu _ thì lấy phần sau dấu _ cuối cùng
+        if (label.includes('_')) {
+            const parts = label.split('_');
+            return parts[parts.length - 1].trim();
+        }
+        return label.trim();
+    }
+
+    /* -- Gộp opLabels/opQtyNG/opCounts theo nhóm -- */
+    function mergeByGroup(labels, qtyArr, cntArr) {
+        const map = {};
+        labels.forEach((lb, i) => {
+            const grp = groupOpLabel(lb);
+            if (!map[grp]) map[grp] = { qty: 0, cnt: 0 };
+            map[grp].qty += qtyArr[i] || 0;
+            map[grp].cnt += cntArr[i] || 0;
+        });
+        const keys   = Object.keys(map).sort((a,b) => map[b].qty - map[a].qty);
+        return {
+            labels: keys,
+            qty:    keys.map(k => map[k].qty),
+            cnt:    keys.map(k => map[k].cnt)
+        };
+    }
+
+    /* -- Gộp pareto theo Defect Name (bỏ code prefix) -- */
+    function mergePareto(labels, qtyArr) {
+        const map = {};
+        labels.forEach((lb, i) => {
+            // label dạng "R14 - Lost roughness" → lấy phần sau " - "
+            let name = lb;
+            const sep = lb.indexOf(' - ');
+            if (sep >= 0) name = lb.slice(sep + 3).trim();
+            if (!map[name]) map[name] = 0;
+            map[name] += qtyArr[i] || 0;
+        });
+        const keys = Object.keys(map).sort((a,b) => map[b] - map[a]);
+        const totalNG = keys.reduce((s,k) => s + map[k], 0);
+        let cum = 0;
+        const cumArr = keys.map(k => {
+            cum += totalNG > 0 ? map[k] / totalNG * 100 : 0;
+            return Math.round(cum * 10) / 10;
+        });
+        return { labels: keys, qty: keys.map(k => map[k]), cum: cumArr };
+    }
+
+    const opMerged     = mergeByGroup(opLabels, opQtyNG, opCounts);
+    const paretoMerged = mergePareto(paretoLabels, paretoQtyNG);
+    const totalQtyNG_all = opMerged.qty.reduce((s,v) => s+v, 0);
+
+    /* ============================================================
+       CHART 1 – DEFECT BY OPERATION (gộp)
+    ============================================================ */
+    new Chart(document.getElementById('operationChart'), {
+        type: 'bar',
+        data: {
+            labels: opMerged.labels,
+            datasets: [{
+                label: 'Tổng Qty NG',
+                data: opMerged.qty,
+                backgroundColor: opMerged.labels.map((_,i) => rgba(PALETTE[i % PALETTE.length], 0.85)),
+                borderColor:     opMerged.labels.map((_,i) => PALETTE[i % PALETTE.length]),
+                borderWidth: 1,
+                borderRadius: 5
+            }]
+        },
+        options: {
+            responsive: true, maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    callbacks: {
+                        label: ctx => {
+                            const pct = totalQtyNG_all > 0 ? ((ctx.parsed.y / totalQtyNG_all)*100).toFixed(1) : 0;
+                            const cnt = opMerged.cnt[ctx.dataIndex] || 0;
+                            return [`  Qty NG: ${ctx.parsed.y} (${pct}%)`, `  Số lần: ${cnt}`];
+                        }
+                    }
+                }
+            },
+            scales: {
+                y: { beginAtZero: true,
+                     title: { display: true, text: 'Qty NG', font: { size: 11 } },
+                     ticks: { font: { size: 10 } } },
+                x: { ticks: { font: { size: 10 }, maxRotation: 30 } }
+            },
+            animation: { duration: 1000, easing: 'easeOutQuart' }
+        }
+    });
+
+    /* ============================================================
+       CHART 2 – PARETO DEFECT NAME (gộp theo tên)
+    ============================================================ */
+    new Chart(document.getElementById('paretoChart'), {
+        type: 'bar',
+        data: {
+            labels: paretoMerged.labels.slice(0, 15),
+            datasets: [
+                {
+                    type: 'bar',
+                    label: 'Qty NG',
+                    data: paretoMerged.qty.slice(0, 15),
+                    backgroundColor: rgba('#e53e3e', 0.8),
+                    borderRadius: 4,
+                    yAxisID: 'y'
+                },
+                {
+                    type: 'line',
+                    label: '% Tích lũy',
+                    data: paretoMerged.cum.slice(0, 15),
+                    borderColor: '#d69e2e',
+                    backgroundColor: rgba('#d69e2e', 0.1),
+                    borderWidth: 2.5,
+                    pointRadius: 4,
+                    tension: 0.3,
+                    fill: false,
+                    yAxisID: 'y1'
+                }
+            ]
+        },
+        options: {
+            responsive: true, maintainAspectRatio: false,
+            plugins: {
+                legend: { display: true, position: 'top', labels: { font: { size: 11 }, usePointStyle: true } },
+                tooltip: { mode: 'index', intersect: false }
+            },
+            scales: {
+                x: { ticks: { font: { size: 9 }, maxRotation: 45 } },
+                y: { beginAtZero: true,
+                     title: { display: true, text: 'Qty NG', font: { size: 10 } },
+                     ticks: { font: { size: 10 } } },
+                y1: {
+                    type: 'linear', position: 'right', min: 0, max: 100,
+                    title: { display: true, text: '% Tích lũy', font: { size: 10 } },
+                    ticks: { font: { size: 10 }, callback: v => v + '%' },
+                    grid: { drawOnChartArea: false }
+                }
+            },
+            animation: { duration: 1200, easing: 'easeOutQuart' }
+        }
+    });
+
+    /* ============================================================
+       CHART 3 – PIE: TOP 10 OPERATION NHIỀU LỖI (không gộp, từng operation riêng)
+    ============================================================ */
+    // Sắp xếp theo qty giảm dần, lấy top 10
+    const pieRaw = opLabels.map((lb, i) => ({ label: lb, qty: opQtyNG[i] || 0 }))
+                           .sort((a, b) => b.qty - a.qty)
+                           .slice(0, 10);
+    const pieOpLabels = pieRaw.map(x => x.label);
+    const pieOpVals   = pieRaw.map(x => x.qty);
+    const pieOpTotal  = pieOpVals.reduce((s,v) => s+v, 0);
+
+    new Chart(document.getElementById('pieChart'), {
+        type: 'doughnut',
+        data: {
+            labels: pieOpLabels,
+            datasets: [{
+                data: pieOpVals,
+                backgroundColor: PALETTE.slice(0, pieOpVals.length).map(c => rgba(c, 0.88)),
+                borderColor: '#fff',
+                borderWidth: 2
+            }]
+        },
+        plugins: [ChartDataLabels],
+        options: {
+            responsive: true, maintainAspectRatio: false, cutout: '52%',
+            plugins: {
+                legend: { display: true, position: 'right',
+                          labels: { font: { size: 10 }, padding: 8, boxWidth: 12 } },
+                tooltip: {
+                    callbacks: {
+                        label: ctx => {
+                            const pct = pieOpTotal > 0
+                                ? ((ctx.parsed / pieOpTotal)*100).toFixed(1) : 0;
+                            return ` ${ctx.label}: ${ctx.parsed} (${pct}%)`;
+                        }
+                    }
+                },
+                datalabels: {
+                    formatter: v => {
+                        const pct = pieOpTotal > 0 ? (v/pieOpTotal*100).toFixed(1) : 0;
+                        return pct >= 5 ? pct + '%' : '';
+                    },
+                    color: '#fff', font: { weight: 'bold', size: 10 },
+                    align: 'center', anchor: 'center'
+                }
+            },
+            animation: { duration: 1300 }
+        }
+    });
+
+    /* ============================================================
+       CHART 4 – TREND + MOVING AVG
+    ============================================================ */
+    const trendCtxEl = document.getElementById('trendChart');
+    const tc = trendCtxEl.getContext('2d');
+    const gradRed  = tc.createLinearGradient(0, 0, 0, 380);
+    gradRed.addColorStop(0, rgba('#e53e3e', .35));
+    gradRed.addColorStop(1, rgba('#e53e3e', .02));
+    const gradBlue = tc.createLinearGradient(0, 0, 0, 380);
+    gradBlue.addColorStop(0, rgba('#2563eb', .3));
+    gradBlue.addColorStop(1, rgba('#2563eb', .02));
+
+    new Chart(trendCtxEl, {
+        type: 'line',
+        data: {
+            labels: trendDates,
+            datasets: [
+                {
+                    label: 'Qty NG theo ngày',
+                    data: trendQtyNG,
+                    borderColor: '#e53e3e',
+                    backgroundColor: gradRed,
+                    borderWidth: 2.5,
+                    fill: true, tension: 0.4,
+                    pointRadius: 4, pointHoverRadius: 8,
+                    pointBackgroundColor: '#e53e3e',
+                    yAxisID: 'y'
+                },
+                {
+                    label: 'Số lần phát sinh lỗi',
+                    data: trendCounts,
+                    borderColor: '#2563eb',
+                    backgroundColor: gradBlue,
+                    borderWidth: 2,
+                    borderDash: [5, 4],
+                    fill: true, tension: 0.4,
+                    pointRadius: 3, pointHoverRadius: 7,
+                    pointBackgroundColor: '#2563eb',
+                    yAxisID: 'y1'
+                },
+                {
+                    label: 'Moving Avg 7 ngày',
+                    data: movingAvg,
+                    borderColor: '#d69e2e',
+                    backgroundColor: 'transparent',
+                    borderWidth: 2.5,
+                    borderDash: [8, 4],
+                    fill: false, tension: 0.4,
+                    pointRadius: 0, pointHoverRadius: 6,
+                    yAxisID: 'y'
+                }
+            ]
+        },
+        options: {
+            responsive: true, maintainAspectRatio: false,
+            interaction: { mode: 'index', intersect: false },
+            plugins: {
+                legend: { display: true, position: 'top',
+                          labels: { font: { size: 12 }, usePointStyle: true, padding: 16 } },
+                tooltip: {
+                    backgroundColor: 'rgba(20,25,40,.88)', padding: 10, cornerRadius: 8,
+                    callbacks: { label: ctx => ` ${ctx.dataset.label}: ${ctx.parsed.y}` }
+                }
+            },
+            scales: {
+                x: {
+                    title: { display: true, text: 'Ngày', font: { size: 11, weight: 'bold' } },
+                    ticks: { font: { size: 10 }, maxRotation: 45 }
+                },
+                y: {
+                    type: 'linear', position: 'left', beginAtZero: true,
+                    title: { display: true, text: 'Qty NG', font: { size: 11, weight: 'bold' } },
+                    ticks: { font: { size: 10 } }
+                },
+                y1: {
+                    type: 'linear', position: 'right', beginAtZero: true,
+                    title: { display: true, text: 'Số lần', font: { size: 11, weight: 'bold' } },
+                    ticks: { font: { size: 10 } },
+                    grid: { drawOnChartArea: false }
+                }
+            },
+            animation: { duration: 1600, easing: 'easeOutQuart' }
+        }
+    });
+    </script>
+}
+</body>
+</html>

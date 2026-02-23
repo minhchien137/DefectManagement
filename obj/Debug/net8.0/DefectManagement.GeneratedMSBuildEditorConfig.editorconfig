@@ -1,5 +1,7 @@
 is_global = true
 build_property.TargetFramework = net8.0
+build_property.TargetFrameworkIdentifier = .NETCoreApp
+build_property.TargetFrameworkVersion = v8.0
 build_property.TargetPlatformMinVersion = 
 build_property.UsingMicrosoftNETSdkWeb = true
 build_property.ProjectTypeGuids = 
@@ -9,41 +11,45 @@ build_property.EnforceExtendedAnalyzerRules =
 build_property._SupportedPlatformList = Linux,macOS,Windows
 build_property.RootNamespace = DefectManagement
 build_property.RootNamespace = DefectManagement
-build_property.ProjectDir = D:\DefectManagement\DefectManagement\
+build_property.ProjectDir = C:\DefectManagement\
 build_property.EnableComHosting = 
 build_property.EnableGeneratedComInterfaceComImportInterop = 
 build_property.RazorLangVersion = 8.0
 build_property.SupportLocalizedComponentNames = 
 build_property.GenerateRazorMetadataSourceChecksumAttributes = 
-build_property.MSBuildProjectDirectory = D:\DefectManagement\DefectManagement
+build_property.MSBuildProjectDirectory = C:\DefectManagement
 build_property._RazorSourceGeneratorDebug = 
 build_property.EffectiveAnalysisLevelStyle = 8.0
 build_property.EnableCodeStyleSeverity = 
 
-[D:/DefectManagement/DefectManagement/Views/Defect/Create.cshtml]
+[C:/DefectManagement/Views/Defect/Create.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcRGVmZWN0XENyZWF0ZS5jc2h0bWw=
 build_metadata.AdditionalFiles.CssScope = 
 
-[D:/DefectManagement/DefectManagement/Views/Defect/Result.cshtml]
+[C:/DefectManagement/Views/Defect/Report.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcRGVmZWN0XFJlcG9ydC5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/DefectManagement/Views/Defect/Result.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcRGVmZWN0XFJlc3VsdC5jc2h0bWw=
 build_metadata.AdditionalFiles.CssScope = 
 
-[D:/DefectManagement/DefectManagement/Views/Shared/Error.cshtml]
+[C:/DefectManagement/Views/Shared/Error.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcU2hhcmVkXEVycm9yLmNzaHRtbA==
 build_metadata.AdditionalFiles.CssScope = 
 
-[D:/DefectManagement/DefectManagement/Views/Shared/_ValidationScriptsPartial.cshtml]
+[C:/DefectManagement/Views/Shared/_ValidationScriptsPartial.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcU2hhcmVkXF9WYWxpZGF0aW9uU2NyaXB0c1BhcnRpYWwuY3NodG1s
 build_metadata.AdditionalFiles.CssScope = 
 
-[D:/DefectManagement/DefectManagement/Views/_ViewImports.cshtml]
+[C:/DefectManagement/Views/_ViewImports.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcX1ZpZXdJbXBvcnRzLmNzaHRtbA==
 build_metadata.AdditionalFiles.CssScope = 
 
-[D:/DefectManagement/DefectManagement/Views/_ViewStart.cshtml]
+[C:/DefectManagement/Views/_ViewStart.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcX1ZpZXdTdGFydC5jc2h0bWw=
 build_metadata.AdditionalFiles.CssScope = 
 
-[D:/DefectManagement/DefectManagement/Views/Shared/_Layout.cshtml]
+[C:/DefectManagement/Views/Shared/_Layout.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcU2hhcmVkXF9MYXlvdXQuY3NodG1s
 build_metadata.AdditionalFiles.CssScope = b-6g1wd1w9ao
