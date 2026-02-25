@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("DefectManagement")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Release")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+538434d85299edd69f9d9b12dd93c7c87498f1e1")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+de9514893052c16110ab5d65086bb9159cb86708")]
 [assembly: System.Reflection.AssemblyProductAttribute("DefectManagement")]
 [assembly: System.Reflection.AssemblyTitleAttribute("DefectManagement")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
