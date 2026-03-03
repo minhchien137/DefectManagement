@@ -1,9 +1,10 @@
-using System.Net.Http.Headers;
 using System.Text;
 using System.Text.RegularExpressions;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using DefectManagement.Models;
 
 
 [ApiController]
@@ -11,18 +12,33 @@ using Newtonsoft.Json.Linq;
 public class OdooController : ControllerBase
 {
     private readonly HttpClient _httpClient;
-    private const string OdooApiUrl = "https://sigmaworldwide.io/web/dataset/call_kw/mrp.production/web_search_read";
+    private readonly ApplicationDbContext _db;
 
+    private const string OdooApiUrl = "https://sigmaworldwide.io/web/dataset/call_kw/mrp.production/web_search_read";
     private const string OdooApiNameEmployer = "https://sigmaworldwide.io/web/dataset/call_kw/hr.employee/web_search_read";
 
-    public OdooController(HttpClient httpClient)
+    public OdooController(HttpClient httpClient, ApplicationDbContext db)
     {
         _httpClient = httpClient;
+        _db = db;
     }
 
+    /// <summary>
+    /// Lấy cookie từ bảng SVN_Defect_Cookie (lấy record đầu tiên).
+    /// Trả về null nếu bảng rỗng — caller sẽ trả lỗi 500.
+    /// </summary>
+    private async Task<string?> GetCookieFromDbAsync()
+    {
+        var record = await _db.SVN_Defect_Cookie.FirstOrDefaultAsync();
+        if (record == null || string.IsNullOrWhiteSpace(record.cookie))
+        {
+            Console.WriteLine("Cookie not found in SVN_Defect_Cookie table.");
+            return null;
+        }
+        return record.cookie;
+    }
 
     // API GET tên nhân viên dựa vào SVN Code
-
     [HttpGet("SearchName")]
     public async Task<IActionResult> SearchName([FromQuery] string nameEmployer)
     {
@@ -31,7 +47,13 @@ public class OdooController : ControllerBase
             return BadRequest(new { message = "nameEmployer parameter is required" });
         }
 
-        // Escape đúng cách cho JSON
+        // Lấy cookie từ DB
+        var cookie = await GetCookieFromDbAsync();
+        if (cookie == null)
+        {
+            return StatusCode(500, new { message = "Odoo cookie not configured. Please update SVN_Defect_Cookie table." });
+        }
+
         var escapedName = JsonConvert.ToString(nameEmployer).Trim('"');
 
         string nameJson = $@"{{
@@ -90,8 +112,6 @@ public class OdooController : ControllerBase
                 Content = jsonContentName
             };
 
-
-            var cookie = "frontend_lang=en_US; cids=1; tz=Asia/Saigon; session_id=bf4fe269ecf8cb3cf89d46a3d2da2d1c2b965d9a";
             request.Headers.Add("Cookie", cookie);
             request.Headers.Add("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36");
             request.Headers.Add("Accept", "application/json, text/javascript, */*; q=0.01");
@@ -108,7 +128,6 @@ public class OdooController : ControllerBase
 
             if (!response.IsSuccessStatusCode)
             {
-                // Trả về thông tin lỗi chi tiết
                 return StatusCode((int)response.StatusCode, new
                 {
                     message = $"Odoo API returned {response.StatusCode}",
@@ -118,7 +137,6 @@ public class OdooController : ControllerBase
                 });
             }
 
-            // Kiểm tra response có chứa error từ Odoo không
             try
             {
                 var jsonResponse = JObject.Parse(responseBody);
@@ -178,7 +196,6 @@ public class OdooController : ControllerBase
 
             var jsonObj = JObject.Parse(jsonResponse);
 
-            // Kiểm tra structure của response
             Console.WriteLine($"Response keys: {string.Join(", ", jsonObj.Properties().Select(p => p.Name))}");
 
             if (jsonObj["error"] != null)
@@ -231,65 +248,66 @@ public class OdooController : ControllerBase
     [HttpGet("search")]
     public async Task<IActionResult> Search([FromQuery] string productionCode)
     {
-        // Tạo body JSON bằng chuỗi nội suy ($@"") như bạn muốn
+        // Lấy cookie từ DB
+        var cookie = await GetCookieFromDbAsync();
+        if (cookie == null)
+        {
+            return StatusCode(500, new { message = "Odoo cookie not configured. Please update SVN_Defect_Cookie table." });
+        }
+
         string finalJson = $@"
-            {{
-                ""id"": 555555555,
-                ""jsonrpc"": ""2.0"",
-                ""method"": ""call"",
-                ""params"": {{
-                    ""model"": ""mrp.production"",
-                    ""method"": ""web_search_read"",
-                    ""args"": [],
-                    ""kwargs"": {{
-                        ""limit"": 80,
-                        ""offset"": 0,
-                        ""order"": """",
-                        ""context"": {{
-                            ""lang"": ""vi_VN"",
-                            ""tz"": ""Asia/Ho_Chi_Minh"",
-                            ""uid"": 2,
-                            ""allowed_company_ids"": [1],
-                            ""bin_size"": true,
-                            ""default_company_id"": 1
-                        }},
-                        ""count_limit"": 10001,
-                        ""domain"": [
-                            ""&"",
-                            [""picking_type_id.active"", ""="", true],
-                            ""&"",
-                            [""state"", ""in"", [""draft"", ""confirmed"", ""progress"", ""to_close""]],
-                            ""|"",
-                            [""name"", ""ilike"", ""{productionCode}""],
-                            [""origin"", ""ilike"", ""xxxxxxxxx""]
-                        ],
-                        ""fields"": [
-                            ""activity_exception_decoration"", ""activity_exception_icon"", ""activity_state"",
-                            ""activity_summary"", ""activity_type_icon"", ""activity_type_id"",
-                            ""company_id"", ""product_uom_category_id"", ""priority"", ""message_needaction"",
-                            ""name"", ""date_planned_start"", ""date_deadline"", ""product_id"",
-                            ""lot_producing_id"", ""bom_id"", ""activity_ids"", ""origin"", ""user_id"",
-                            ""components_availability_state"", ""components_availability"",
-                            ""reservation_state"", ""product_qty"", ""product_uom_id"",
-                            ""production_duration_expected"", ""production_real_duration"",
-                            ""progress"", ""state"", ""delay_alert_date"", ""json_popover""
-                        ]
-                    }}
-                }}
-            }}";
+    {{
+        ""id"": 555555555,
+        ""jsonrpc"": ""2.0"",
+        ""method"": ""call"",
+        ""params"": {{
+            ""model"": ""mrp.production"",
+            ""method"": ""web_search_read"",
+            ""args"": [],
+            ""kwargs"": {{
+                ""limit"": 80,
+                ""offset"": 0,
+                ""order"": """",
+                ""context"": {{
+                    ""lang"": ""vi_VN"",
+                    ""tz"": ""Asia/Ho_Chi_Minh"",
+                    ""uid"": 2,
+                    ""allowed_company_ids"": [1],
+                    ""bin_size"": true,
+                    ""default_company_id"": 1
+                }},
+                ""count_limit"": 10001,
+                ""domain"": [
+                    ""&"",
+                    [""picking_type_id.active"", ""="", true],
+                    ""|"",
+                    [""name"", ""ilike"", ""{productionCode}""],
+                    [""origin"", ""ilike"", ""{productionCode}""]
+                ],
+                ""fields"": [
+                    ""activity_exception_decoration"", ""activity_exception_icon"", ""activity_state"",
+                    ""activity_summary"", ""activity_type_icon"", ""activity_type_id"",
+                    ""company_id"", ""product_uom_category_id"", ""priority"", ""message_needaction"",
+                    ""name"", ""date_planned_start"", ""date_deadline"", ""product_id"",
+                    ""lot_producing_id"", ""bom_id"", ""activity_ids"", ""origin"", ""user_id"",
+                    ""components_availability_state"", ""components_availability"",
+                    ""reservation_state"", ""product_qty"", ""product_uom_id"",
+                    ""production_duration_expected"", ""production_real_duration"",
+                    ""progress"", ""state"", ""delay_alert_date"", ""json_popover""
+                ]
+            }}
+        }}
+    }}";
 
         var jsonContent = new StringContent(finalJson, Encoding.UTF8, "application/json");
 
         try
         {
-            // Tạo request riêng để thêm cookie cho request này thôi
             using var request = new HttpRequestMessage(HttpMethod.Post, OdooApiUrl)
             {
                 Content = jsonContent
             };
 
-            // Thêm cookie cho request này
-            var cookie = "frontend_lang=en_US; cids=1; tz=Asia/Saigon; session_id=bf4fe269ecf8cb3cf89d46a3d2da2d1c2b965d9a";
             request.Headers.Add("Cookie", cookie);
 
             var response = await _httpClient.SendAsync(request);
@@ -297,7 +315,6 @@ public class OdooController : ControllerBase
 
             var responseBody = await response.Content.ReadAsStringAsync();
 
-            // Trích xuất product code từ response
             var productCode = ExtractProductCode(responseBody);
 
             if (!string.IsNullOrEmpty(productCode))
@@ -350,4 +367,3 @@ public class OdooController : ControllerBase
         }
     }
 }
-
