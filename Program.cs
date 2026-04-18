@@ -1,4 +1,4 @@
-using DefectManagement.Models;
+﻿using DefectManagement.Models;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);

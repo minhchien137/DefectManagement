@@ -52,31 +52,19 @@ namespace DefectManagement.Controllers
 
             if (!string.IsNullOrEmpty(workOrder))
                 query = query.Where(x => x.Work_order.Contains(workOrder));
-
             if (!string.IsNullOrEmpty(defectCode))
                 query = query.Where(x => x.Defect_Code.Contains(defectCode));
-
             if (!string.IsNullOrEmpty(defectName))
                 query = query.Where(x => x.Defect_Name.Contains(defectName));
-
             if (!string.IsNullOrEmpty(employerCode))
                 query = query.Where(x => x.Employer_code.Contains(employerCode));
-
             if (!string.IsNullOrEmpty(operation))
                 query = query.Where(x => x.Operation.Contains(operation));
-
             if (!string.IsNullOrEmpty(fromInsDateTime) && DateTime.TryParse(fromInsDateTime, out var fromDate))
-            {
-                var formattedDate = fromDate.ToString("yyyyMMdd");
-                query = query.Where(x => x.INSDatetime.CompareTo(formattedDate) >= 0);
-            }
+                query = query.Where(x => x.INSDatetime.CompareTo(fromDate.ToString("yyyyMMdd")) >= 0);
             if (!string.IsNullOrEmpty(toInsDateTime) && DateTime.TryParse(toInsDateTime, out var toDate))
-            {
-                var formattedDate = toDate.ToString("yyyyMMdd");
-                query = query.Where(x => x.INSDatetime.CompareTo(formattedDate) <= 0);
-            }
+                query = query.Where(x => x.INSDatetime.CompareTo(toDate.ToString("yyyyMMdd")) <= 0);
 
-            // Sắp xếp bản ghi theo thời gian ASC
             var data = await query.OrderBy(x => x.Time_line).ToListAsync();
 
             using (var workbook = new XLWorkbook())
@@ -84,12 +72,14 @@ namespace DefectManagement.Controllers
                 var ws = workbook.Worksheets.Add("DefectHistory");
                 var currentRow = 1;
 
-                // Font mặc định
                 ws.Style.Font.FontName = "Times New Roman";
                 ws.Style.Font.FontSize = 11;
 
-                // Header
-                string[] headers = { "ID", "Work Order", "Item Code", "Defect Code", "Defect Name", "Qty NG", "INS DateTime", "Operation", "Employer Code", "Employer Name", "Note", "Image Error", "Time Line" };
+                // ── Header ──
+                string[] headers = { "ID", "Work Order", "Item Code", "Defect Code", "Defect Name",
+                              "Qty NG", "INS DateTime", "Operation", "Employer Code",
+                              "Employer Name", "Note", "Image Error", "Time Line" };
+
                 for (int i = 0; i < headers.Length; i++)
                 {
                     var cell = ws.Cell(currentRow, i + 1);
@@ -100,11 +90,18 @@ namespace DefectManagement.Controllers
                     cell.Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
                     cell.Style.Alignment.Vertical = XLAlignmentVerticalValues.Center;
                 }
+                ws.Row(currentRow).Height = 20;
 
-                // Data
+                // ── Data rows ──
+                const int IMAGE_COL = 12;
+                const double ROW_HEIGHT = 60;
+                const int IMG_WIDTH = 80;
+                const int IMG_HEIGHT = 60;
+
                 foreach (var item in data)
                 {
                     currentRow++;
+
                     ws.Cell(currentRow, 1).Value = item.Id;
                     ws.Cell(currentRow, 2).Value = item.Work_order;
                     ws.Cell(currentRow, 3).Value = item.Item_code;
@@ -116,28 +113,60 @@ namespace DefectManagement.Controllers
                     ws.Cell(currentRow, 9).Value = item.Employer_code;
                     ws.Cell(currentRow, 10).Value = item.Employer_name;
                     ws.Cell(currentRow, 11).Value = item.Note;
-                    ws.Cell(currentRow, 12).Value = item.Image_error;
                     ws.Cell(currentRow, 13).Value = item.Time_line?.ToString("yyyy-MM-dd HH:mm:ss");
+
+                    // ── Xử lý ảnh ──
+                    bool imageEmbedded = false;
+
+                    if (!string.IsNullOrWhiteSpace(item.Image_error))
+                    {
+                        var relativePath = item.Image_error.TrimStart('/').Replace('/', Path.DirectorySeparatorChar);
+                        var physicalPath = Path.Combine(_webHostEnvironment.WebRootPath, relativePath);
+
+                        if (System.IO.File.Exists(physicalPath))
+                        {
+                            try
+                            {
+                                ws.Row(currentRow).Height = ROW_HEIGHT;
+
+                                using var imgStream = new FileStream(physicalPath, FileMode.Open, FileAccess.Read);
+
+                                ws.AddPicture(imgStream)
+                                  .MoveTo(ws.Cell(currentRow, IMAGE_COL))
+                                  .WithSize(IMG_WIDTH, IMG_HEIGHT);
+
+                                imageEmbedded = true;
+                            }
+                            catch
+                            {
+                                // Nếu lỗi load ảnh → fallback hiện link
+                            }
+                        }
+                    }
+
+                    if (!imageEmbedded)
+                    {
+                        ws.Cell(currentRow, IMAGE_COL).Value = item.Image_error ?? "";
+                    }
                 }
 
-                // Canh giữa các cột số và ngày
-                ws.Columns(1, 1).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center; // ID
-                ws.Columns(5, 5).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center; // Qty NG
-                ws.Columns(6, 6).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center; // INS DateTime
-                ws.Columns(12, 12).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center; // Time Line
+                // ── Căn chỉnh ──
+                ws.Column(1).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
+                ws.Column(6).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
+                ws.Column(7).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
+                ws.Column(13).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
 
-                // Auto fit column width
+                ws.Column(IMAGE_COL).Width = 14;
                 ws.Columns().AdjustToContents();
 
-                using (var stream = new MemoryStream())
-                {
-                    workbook.SaveAs(stream);
-                    return File(stream.ToArray(),
-                        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                        "DefectHistory.xlsx");
-                }
+                using var stream = new MemoryStream();
+                workbook.SaveAs(stream);
+                return File(stream.ToArray(),
+                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                    "DefectHistory.xlsx");
             }
         }
+
 
 
         // Updated Result method with server-side pagination
@@ -232,7 +261,6 @@ namespace DefectManagement.Controllers
                 return View(new List<SVN_Defect_Record_History>());
             }
         }
-
 
         [HttpPost]
         public async Task<IActionResult> Create(SVN_Defect_Record_History model, IFormFile imageFile)
