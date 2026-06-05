@@ -263,7 +263,7 @@ namespace DefectManagement.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> Create(SVN_Defect_Record_History model, IFormFile imageFile)
+        public async Task<IActionResult> Create(SVN_Defect_Record_History model, IFormFile imageFile, bool IsNightShift = false)
         {
             try
             {
@@ -319,6 +319,27 @@ namespace DefectManagement.Controllers
                     imagePath = $"/uploads/defect-images/{fileName}";
                 }
 
+                // ===== Xử lý thời gian ca đêm =====
+                string insDatetime;
+                DateTime timeLine;
+
+                if (IsNightShift)
+                {
+                    // INSDatetime = ngày hôm qua (yyyyMMdd)
+                    var yesterday = DateTime.Now.AddDays(-1);
+                    insDatetime = yesterday.ToString("yyyyMMdd");
+
+                    // Time_line = random trong khoảng 20:00 - 23:59 ngày hôm qua
+                    var rng = new Random();
+                    int randomMinutes = rng.Next(0, 4 * 60); // 0 đến 239 phút (4 tiếng: 20h-23h59)
+                    timeLine = yesterday.Date.AddHours(20).AddMinutes(randomMinutes);
+                }
+                else
+                {
+                    insDatetime = DateTime.Now.ToString("yyyyMMdd");
+                    timeLine = DateTime.Now;
+                }
+
                 // Gọi stored procedure với parameters
                 await _context.Database.ExecuteSqlRawAsync(
                     "EXEC [dbo].[SVN_InsertDefectReport] {0}, {1}, {2}, {3}, {4}, {5}, {6}, {7}, {8}, {9}, {10}, {11}",
@@ -327,15 +348,15 @@ namespace DefectManagement.Controllers
                     model.Defect_Code ?? "",
                     model.Defect_Name ?? "",
                     model.Qty_NG,
-                    DateTime.Now.ToString("yyyyMMdd"),
+                    insDatetime,
                     model.Operation ?? "",
                     model.Employer_code ?? "",
                     model.Employer_name ?? "",
                     model.Note ?? "",
                     imagePath ?? "",
-                    DateTime.Now);
+                    timeLine);
 
-                Console.WriteLine("Stored procedure executed successfully");
+                Console.WriteLine($"Stored procedure executed. IsNightShift={IsNightShift}, INSDatetime={insDatetime}, TimeLine={timeLine}");
 
                 return Json(new { success = true, message = "Lưu thông tin thành công!", data = model });
             }

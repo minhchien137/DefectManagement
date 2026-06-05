@@ -295,3 +295,11 @@ C:\DefectManagement\obj\Debug\net8.0\refint\DefectManagement.dll
 C:\DefectManagement\obj\Debug\net8.0\DefectManagement.pdb
 C:\DefectManagement\obj\Debug\net8.0\DefectManagement.genruntimeconfig.cache
 C:\DefectManagement\obj\Debug\net8.0\ref\DefectManagement.dll
+C:\DefectManagement\bin\Debug\net8.0\EPPlus.dll
+C:\DefectManagement\bin\Debug\net8.0\EPPlus.Interfaces.dll
+C:\DefectManagement\bin\Debug\net8.0\Microsoft.Extensions.Configuration.FileExtensions.dll
+C:\DefectManagement\bin\Debug\net8.0\Microsoft.Extensions.Configuration.Json.dll
+C:\DefectManagement\bin\Debug\net8.0\Microsoft.IO.RecyclableMemoryStream.dll
+C:\DefectManagement\bin\Debug\net8.0\System.Security.Cryptography.Pkcs.dll
+C:\DefectManagement\bin\Debug\net8.0\System.Security.Cryptography.Xml.dll
+C:\DefectManagement\bin\Debug\net8.0\runtimes\win\lib\net8.0\System.Security.Cryptography.Pkcs.dll

@@ -9,6 +9,30 @@
 <!-- Toast Container -->
 <div class="toast-container" id="toastContainer"></div>
 
+<!-- Night Shift Modal -->
+<div id="nightShiftModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:9999; align-items:center; justify-content:center;">
+    <div style="background:#fff; border-radius:12px; padding:32px 28px; max-width:420px; width:90%; box-shadow:0 8px 32px rgba(0,0,0,0.2); text-align:center;">
+        <div style="font-size:2.5rem; margin-bottom:12px;">🌙</div>
+        <h3 style="margin:0 0 10px; color:#1a237e; font-size:1.2rem;">Phát hiện ca đêm</h3>
+        <p style="color:#555; margin:0 0 8px; font-size:0.95rem;">
+            Hiện tại là <strong id="modalCurrentTime"></strong>.
+        </p>
+        <p style="color:#555; margin:0 0 24px; font-size:0.95rem;">
+            Bạn đang muốn nhập <strong>defect</strong> cho <strong>ca đêm</strong> không?
+        </p>
+        <div style="display:flex; gap:12px; justify-content:center;">
+            <button id="btnNightShiftYes"
+                style="padding:10px 28px; background:#1976d2; color:#fff; border:none; border-radius:8px; font-size:1rem; cursor:pointer; font-weight:600;">
+                ✅ Có
+            </button>
+            <button id="btnNightShiftNo"
+                style="padding:10px 28px; background:#e53935; color:#fff; border:none; border-radius:8px; font-size:1rem; cursor:pointer; font-weight:600;">
+                ❌ Không, ca ngày!
+            </button>
+        </div>
+    </div>
+</div>
+
 <div class="defect-form-container">
     <div class="form-header">
         <h1 class="form-title">Defect Management</h1>
@@ -471,7 +495,37 @@
         });
 
 
-        document.getElementById("btnSaveToDB").addEventListener("click", function (e) {
+        // ===== Night Shift Logic =====
+        let pendingNightShiftResolve = null;
+
+        function showNightShiftModal() {
+            const now = new Date();
+            const hh = String(now.getHours()).padStart(2, '0');
+            const mm = String(now.getMinutes()).padStart(2, '0');
+            document.getElementById('modalCurrentTime').textContent = hh + ':' + mm;
+            const modal = document.getElementById('nightShiftModal');
+            modal.style.display = 'flex';
+            return new Promise(resolve => { pendingNightShiftResolve = resolve; });
+        }
+
+        let nightShiftClickTime = null; // Lưu giờ lúc bấm Có
+
+        document.getElementById('btnNightShiftYes').addEventListener('click', function () {
+            // Ghi lại giờ phút lúc bấm Có
+            const now = new Date();
+            const h = now.getHours();
+            const m = String(now.getMinutes()).padStart(2, '0');
+            nightShiftClickTime = `${h}h${m}'`;
+            document.getElementById('nightShiftModal').style.display = 'none';
+            if (pendingNightShiftResolve) pendingNightShiftResolve(true);
+        });
+
+        document.getElementById('btnNightShiftNo').addEventListener('click', function () {
+            document.getElementById('nightShiftModal').style.display = 'none';
+            if (pendingNightShiftResolve) pendingNightShiftResolve(false);
+        });
+
+        document.getElementById("btnSaveToDB").addEventListener("click", async function (e) {
             e.preventDefault();
 
             // Validate form trước khi gửi
@@ -481,32 +535,36 @@
             const defectCode = document.getElementById("code").value;
             const defectName = document.getElementById("name").value;
             const qtyNG = document.getElementById("Qty_NG").value;
-            const resultMessageDiv = document.getElementById("resultMessage"); // Thêm dòng này
-
 
             if (!employerCode || !workOrder || !operation || !defectCode || !qtyNG || qtyNG <= 0) {
                 showToast("Vui lòng điền đầy đủ thông tin bắt buộc!", 'error', 2000);
                 return;
             }
 
-            if (employerCode) {
-                localStorage.setItem('Employer_code', employerCode);
+            // === Kiểm tra giờ: 00h - 8h ===
+            const currentHour = new Date().getHours();
+            let isNightShift = false;
+
+            if (currentHour >= 0 && currentHour < 8) {
+                const userChoice = await showNightShiftModal();
+                if (userChoice === false) {
+                    // Người dùng chọn Không → báo chưa tới giờ
+                    showToast("⏰ Chưa tới giờ sản xuất ca ngày, vui lòng thử lại!", 'error', 4000);
+                    return;
+                }
+                // Người dùng chọn Có → đánh dấu ca đêm
+                isNightShift = true;
             }
-            if (workOrder) {
-                localStorage.setItem('WorkOrder', workOrder);
-            }
-            if (operation) {
-                localStorage.setItem('Operation', operation);
-            }
+
+            if (employerCode) localStorage.setItem('Employer_code', employerCode);
+            if (workOrder)    localStorage.setItem('WorkOrder', workOrder);
+            if (operation)    localStorage.setItem('Operation', operation);
 
             const btn = this;
             btn.disabled = true;
             btn.textContent = "Đang lưu...";
 
-
-            // 1. Tạo đối tượng FormData mới
             const formData = new FormData();
-
             formData.append('Employer_code', employerCode);
             formData.append('Work_order', workOrder);
             formData.append('Item_code', currentProductCode);
@@ -515,54 +573,46 @@
             formData.append('Defect_Name', defectName);
             formData.append('Employer_name', currentNameEmployer);
             formData.append('Qty_NG', qtyNG);
-            formData.append('Note', document.getElementById("Note").value || '');
+            const rawNote = document.getElementById("Note").value || '';
+            const noteValue = (isNightShift && nightShiftClickTime)
+                ? (rawNote ? `${rawNote} (${nightShiftClickTime})` : `(${nightShiftClickTime})`)
+                : rawNote;
+            formData.append('Note', noteValue);
+            formData.append('IsNightShift', isNightShift ? 'true' : 'false');
 
-            // 3. Thêm file ảnh vào FormData nếu có
             const imageInput = document.getElementById('imageInput');
             if (imageInput.files.length > 0) {
                 formData.append('imageFile', imageInput.files[0]);
             }
 
-
-            console.log("Sending data");
+            console.log("Sending data, isNightShift =", isNightShift);
 
             fetch('/Defect/Create', {
                 method: 'POST',
                 body: formData
             })
                 .then(res => {
-                    if (!res.ok) {
-                        throw new Error("Lưu thông tin không thành công!"); // HTTP lỗi
-                    }
+                    if (!res.ok) throw new Error("Lưu thông tin không thành công!");
                     return res.json();
                 })
                 .then(response => {
                     console.log("Response:", response);
-
                     if (response.success) {
-
                         showToast(response.message || "Lưu thông tin thành công!", 'success', 2500);
-
-                        // Reset form sau khi lưu thành công
                         document.getElementById("defectForm").reset();
                         $('#operation').val(null).trigger('change');
                         $('#code').val(null).trigger('change');
                         document.getElementById("name").value = '';
-
-                        setTimeout(() => {
-                            autofillFields();
-                        }, 100);
-
+                        setTimeout(() => { autofillFields(); }, 100);
                     } else {
                         showToast(response.message || "Lưu thông tin không thành công!", 'error', 2500);
                     }
                 })
                 .catch(err => {
                     console.error("Error:", err);
-                    showToast("Lưu thông tin không thành công!", 'error', 2500); // HTTP lỗi hoặc JS lỗi
+                    showToast("Lưu thông tin không thành công!", 'error', 2500);
                 })
                 .finally(() => {
-
                     btn.disabled = false;
                     btn.textContent = "Lưu Thông Tin";
                 });
