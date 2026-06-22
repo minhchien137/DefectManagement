@@ -888,7 +888,6 @@ C:\DefectManagement\bin\Release\net8.0\win-x64\createdump.exe
 C:\DefectManagement\bin\Release\net8.0\win-x64\hostfxr.dll
 C:\DefectManagement\bin\Release\net8.0\win-x64\hostpolicy.dll
 C:\DefectManagement\bin\Release\net8.0\win-x64\mscordaccore.dll
-C:\DefectManagement\bin\Release\net8.0\win-x64\mscordaccore_amd64_amd64_8.0.2325.60607.dll
 C:\DefectManagement\bin\Release\net8.0\win-x64\mscordbi.dll
 C:\DefectManagement\bin\Release\net8.0\win-x64\mscorrc.dll
 C:\DefectManagement\bin\Release\net8.0\win-x64\msquic.dll
@@ -914,10 +913,13 @@ C:\DefectManagement\obj\Release\net8.0\win-x64\staticwebassets.build.json.cache
 C:\DefectManagement\obj\Release\net8.0\win-x64\staticwebassets.development.json
 C:\DefectManagement\obj\Release\net8.0\win-x64\staticwebassets.build.endpoints.json
 C:\DefectManagement\obj\Release\net8.0\win-x64\swae.build.ex.cache
-C:\DefectManagement\obj\Release\net8.0\win-x64\staticwebassets.upToDateCheck.txt
 C:\DefectManagement\obj\Release\net8.0\win-x64\DefectMa.05AD975F.Up2Date
 C:\DefectManagement\obj\Release\net8.0\win-x64\DefectManagement.dll
 C:\DefectManagement\obj\Release\net8.0\win-x64\refint\DefectManagement.dll
 C:\DefectManagement\obj\Release\net8.0\win-x64\DefectManagement.pdb
 C:\DefectManagement\obj\Release\net8.0\win-x64\DefectManagement.genruntimeconfig.cache
 C:\DefectManagement\obj\Release\net8.0\win-x64\ref\DefectManagement.dll
+C:\DefectManagement\bin\Release\net8.0\win-x64\EPPlus.dll
+C:\DefectManagement\bin\Release\net8.0\win-x64\EPPlus.Interfaces.dll
+C:\DefectManagement\bin\Release\net8.0\win-x64\Microsoft.IO.RecyclableMemoryStream.dll
+C:\DefectManagement\bin\Release\net8.0\win-x64\mscordaccore_amd64_amd64_8.0.2626.16921.dll

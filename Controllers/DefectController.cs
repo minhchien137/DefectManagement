@@ -2,10 +2,14 @@
 using ClosedXML.Excel;
 using System.IO;
 using System.Threading.Tasks;
+using System.Drawing;
 using DefectManagement.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
+using OfficeOpenXml;
+using OfficeOpenXml.Drawing.Chart;
+using OfficeOpenXml.Style;
 
 namespace DefectManagement.Controllers
 {
@@ -1104,7 +1108,663 @@ namespace DefectManagement.Controllers
                 $"BaoCaoDefect_{DateTime.Now:yyyyMMdd_HHmmss}.xlsx");
         }
 
+    /* ──────────────────────────────────────────────────────────────
+       ExportDefectExcel  –  EPPlus multi-tab workbook (5 sheets)
+    ────────────────────────────────────────────────────────────── */
+    [AcceptVerbs("GET", "POST")]
+    [IgnoreAntiforgeryToken]
+    public async Task<IActionResult> ExportDefectExcel([FromBody] ExportDefectDto? dto)
+    {
+        try
+        {
+        ExcelPackage.License.SetNonCommercialOrganization("DefectManagement");
 
+        // Supports both POST (with JSON body + chart images) and GET (query-string fallback)
+        var fromDate   = dto?.DateFrom   ?? Request.Query["fromDate"].FirstOrDefault()   ?? "";
+        var toDate     = dto?.DateTo     ?? Request.Query["toDate"].FirstOrDefault()     ?? "";
+        var workOrder  = dto?.WorkOrder  ?? Request.Query["workOrder"].FirstOrDefault()  ?? "";
+        var operation  = dto?.Operation  ?? Request.Query["operation"].FirstOrDefault()  ?? "";
+        var defectCode = dto?.DefectCode ?? Request.Query["defectCode"].FirstOrDefault() ?? "";
+        var itemCode   = dto?.ItemCode   ?? Request.Query["itemCode"].FirstOrDefault()   ?? "";
+
+        // ── 1. Query (identical filter logic to Report action) ──
+        var query = _context.SVN_Defect_Record_History.AsQueryable();
+        if (!string.IsNullOrEmpty(workOrder))  query = query.Where(x => x.Work_order  == workOrder);
+        if (!string.IsNullOrEmpty(operation))  query = query.Where(x => x.Operation   == operation);
+        if (!string.IsNullOrEmpty(defectCode)) query = query.Where(x => x.Defect_Code == defectCode);
+        if (!string.IsNullOrEmpty(itemCode))   query = query.Where(x => x.Item_code   == itemCode);
+        if (!string.IsNullOrEmpty(fromDate) && DateTime.TryParse(fromDate, out var fd))
+            query = query.Where(x => x.INSDatetime.CompareTo(fd.ToString("yyyyMMdd")) >= 0);
+        if (!string.IsNullOrEmpty(toDate) && DateTime.TryParse(toDate, out var td))
+            query = query.Where(x => x.INSDatetime.CompareTo(td.ToString("yyyyMMdd")) <= 0);
+
+        var data = await query.OrderByDescending(x => x.Time_line).AsNoTracking().ToListAsync();
+
+        // ── 2. Aggregate data for all tabs ──
+        int kpiOps     = data.Select(x => x.Operation).Distinct().Count();
+        int kpiRecords = data.Count;
+        int kpiQtyNG   = data.Sum(x => x.Qty_NG ?? 0);
+
+        var byOperation = data
+            .GroupBy(x => x.Operation ?? "N/A")
+            .Select(g => new { Operation = g.Key, QtyNG = g.Sum(x => x.Qty_NG ?? 0), Count = g.Count() })
+            .OrderByDescending(x => x.QtyNG).ToList();
+
+        var byDefect = data
+            .GroupBy(x => new { x.Defect_Code, x.Defect_Name })
+            .Select(g => new { Code = g.Key.Defect_Code ?? "", Name = g.Key.Defect_Name ?? "N/A", QtyNG = g.Sum(x => x.Qty_NG ?? 0) })
+            .OrderByDescending(x => x.QtyNG).ToList();
+        int totalDefectNG = byDefect.Sum(x => x.QtyNG);
+        double cumAcc = 0;
+        var paretoList = byDefect.Select(x => {
+            cumAcc += totalDefectNG > 0 ? (double)x.QtyNG / totalDefectNG * 100 : 0;
+            return new {
+                x.Code, x.Name, x.QtyNG,
+                PctOfTotal = totalDefectNG > 0 ? Math.Round((double)x.QtyNG / totalDefectNG * 100, 1) : 0.0,
+                CumPct = Math.Round(cumAcc, 1)
+            };
+        }).ToList();
+
+        var top10Ops = byOperation.Take(10).ToList();
+
+        var dailyTrend = data
+            .Where(x => x.Time_line.HasValue)
+            .GroupBy(x => x.Time_line!.Value.Date)
+            .Select(g => new { Date = g.Key, QtyNG = g.Sum(x => x.Qty_NG ?? 0), Count = g.Count() })
+            .OrderBy(x => x.Date).ToList();
+        var qtyList   = dailyTrend.Select(x => (double)x.QtyNG).ToList();
+        var movingAvg = qtyList.Select((_, i) =>
+            i < 6 ? (double?)null : Math.Round(qtyList.Skip(i - 6).Take(7).Average(), 1)).ToList();
+
+        // ── 3. Colors ──
+        var cBlueDark  = Color.FromArgb(0x1B, 0x4F, 0x8A);
+        var cBlueMid   = Color.FromArgb(0x2A, 0x52, 0x98);
+        var cRed       = Color.FromArgb(0xE5, 0x3E, 0x3E);
+        var cAmber     = Color.FromArgb(0xD6, 0x9E, 0x2E);
+        var cWhite     = Color.White;
+        var cLightBlue = Color.FromArgb(0xEF, 0xF6, 0xFF);
+        var cLightGray = Color.FromArgb(0xF0, 0xF4, 0xF8);
+        var cGray      = Color.FromArgb(0x71, 0x80, 0x96);
+        var cGreen     = Color.FromArgb(0x05, 0x96, 0x69);
+
+        using var pkg = new ExcelPackage();
+        var openStreams = new List<MemoryStream>();
+
+        // ── Shared style helpers ──
+        void StyleHeader(ExcelRange range, Color bg, Color fg, int fs = 11)
+        {
+            range.Style.Fill.PatternType = ExcelFillStyle.Solid;
+            range.Style.Fill.BackgroundColor.SetColor(bg);
+            range.Style.Font.Color.SetColor(fg);
+            range.Style.Font.Bold = true;
+            range.Style.Font.Size = fs;
+            range.Style.Font.Name = "Calibri";
+            range.Style.HorizontalAlignment = ExcelHorizontalAlignment.Center;
+            range.Style.VerticalAlignment   = ExcelVerticalAlignment.Center;
+        }
+        void ThinBorder(ExcelRange range)
+        {
+            var bc = Color.FromArgb(0xCB, 0xD5, 0xE0);
+            range.Style.Border.Top.Style    = ExcelBorderStyle.Thin;
+            range.Style.Border.Bottom.Style = ExcelBorderStyle.Thin;
+            range.Style.Border.Left.Style   = ExcelBorderStyle.Thin;
+            range.Style.Border.Right.Style  = ExcelBorderStyle.Thin;
+            range.Style.Border.Top.Color.SetColor(bc);
+            range.Style.Border.Bottom.Color.SetColor(bc);
+            range.Style.Border.Left.Color.SetColor(bc);
+            range.Style.Border.Right.Color.SetColor(bc);
+        }
+        void SetFill(ExcelRange range, Color bg)
+        {
+            range.Style.Fill.PatternType = ExcelFillStyle.Solid;
+            range.Style.Fill.BackgroundColor.SetColor(bg);
+        }
+
+        /* ═══════════════════════════════════════════════════
+           TAB 1 – Summary
+        ═══════════════════════════════════════════════════ */
+        var ws1 = pkg.Workbook.Worksheets.Add("Summary");
+        ws1.View.ShowGridLines = false;
+        ws1.Cells.Style.Font.Name = "Calibri";
+        ws1.Cells.Style.Font.Size = 11;
+
+        int row = 1;
+
+        // Main title
+        ws1.Cells[row, 1, row, 11].Merge = true;
+        ws1.Cells[row, 1].Value = "BÁO CÁO DEFECT";
+        StyleHeader(ws1.Cells[row, 1, row, 11], cBlueDark, cWhite, 16);
+        ws1.Row(row).Height = 38;
+        row++;
+
+        // Export timestamp
+        ws1.Cells[row, 1, row, 11].Merge = true;
+        ws1.Cells[row, 1].Value = $"Exported at: {DateTime.Now:dd/MM/yyyy HH:mm:ss}";
+        ws1.Cells[row, 1].Style.Font.Italic = true;
+        ws1.Cells[row, 1].Style.Font.Color.SetColor(cGray);
+        SetFill(ws1.Cells[row, 1, row, 11], cLightGray);
+        ws1.Cells[row, 1].Style.HorizontalAlignment = ExcelHorizontalAlignment.Center;
+        row++;
+
+        // Filter info rows
+        var filters = new (string Label, string Value)[]
+        {
+            ("Từ ngày",     string.IsNullOrEmpty(fromDate) ? "Tất cả" : DateTime.Parse(fromDate).ToString("dd/MM/yyyy")),
+            ("Đến ngày",    string.IsNullOrEmpty(toDate)   ? "Tất cả" : DateTime.Parse(toDate).ToString("dd/MM/yyyy")),
+            ("Work Order",  string.IsNullOrEmpty(workOrder)  ? "Tất cả" : workOrder),
+            ("Operation",   string.IsNullOrEmpty(operation)  ? "Tất cả" : operation),
+            ("Defect Code", string.IsNullOrEmpty(defectCode) ? "Tất cả" : defectCode),
+            ("Item Code",   string.IsNullOrEmpty(itemCode)   ? "Tất cả" : itemCode),
+        };
+        foreach (var (label, value) in filters)
+        {
+            ws1.Cells[row, 1].Value = label;
+            ws1.Cells[row, 1].Style.Font.Bold = true;
+            SetFill(ws1.Cells[row, 1], cLightBlue);
+            ws1.Cells[row, 2, row, 4].Merge = true;
+            ws1.Cells[row, 2].Value = value;
+            ThinBorder(ws1.Cells[row, 1, row, 4]);
+            row++;
+        }
+        row++; // blank row
+
+        // KPI section title
+        ws1.Cells[row, 1, row, 11].Merge = true;
+        ws1.Cells[row, 1].Value = "DASHBOARD TỔNG QUAN";
+        StyleHeader(ws1.Cells[row, 1, row, 11], cBlueMid, cWhite, 12);
+        ws1.Row(row).Height = 22;
+        row++;
+
+        // KPI header labels
+        var kpiLabels = new[] { "Tổng số Operation", "Tổng Defect Records", "Tổng số lượng NG" };
+        var kpiVals   = new[] { kpiOps, kpiRecords, kpiQtyNG };
+        var kpiColors = new[] { cBlueMid, cRed, cAmber };
+        for (int k = 0; k < 3; k++)
+        {
+            int c = k * 4 + 1;
+            ws1.Cells[row, c, row, c + 3].Merge = true;
+            ws1.Cells[row, c].Value = kpiLabels[k];
+            StyleHeader(ws1.Cells[row, c, row, c + 3], kpiColors[k], cWhite, 10);
+        }
+        ws1.Row(row).Height = 22;
+        row++;
+
+        // KPI values
+        for (int k = 0; k < 3; k++)
+        {
+            int c = k * 4 + 1;
+            ws1.Cells[row, c, row, c + 3].Merge = true;
+            ws1.Cells[row, c].Value = kpiVals[k];
+            SetFill(ws1.Cells[row, c, row, c + 3], Color.FromArgb(0xF8, 0xFA, 0xFF));
+            ws1.Cells[row, c].Style.Font.Bold = true;
+            ws1.Cells[row, c].Style.Font.Size = 22;
+            ws1.Cells[row, c].Style.Font.Color.SetColor(kpiColors[k]);
+            ws1.Cells[row, c].Style.HorizontalAlignment = ExcelHorizontalAlignment.Center;
+            ws1.Cells[row, c].Style.VerticalAlignment   = ExcelVerticalAlignment.Center;
+            ws1.Cells[row, c].Style.Numberformat.Format = "#,##0";
+            ThinBorder(ws1.Cells[row, c, row, c + 3]);
+        }
+        ws1.Row(row).Height = 42;
+        row += 2;
+
+        // Detail records section title
+        ws1.Cells[row, 1, row, 11].Merge = true;
+        ws1.Cells[row, 1].Value = "CHI TIẾT DEFECT RECORDS";
+        StyleHeader(ws1.Cells[row, 1, row, 11], cBlueMid, cWhite, 12);
+        ws1.Row(row).Height = 22;
+        row++;
+
+        // Detail table header
+        string[] detailHeaders = { "#", "Work Order", "Item Code", "Defect Code", "Defect Name", "Qty NG", "Operation", "Employer", "Note", "Image", "Time Line" };
+        for (int c = 0; c < detailHeaders.Length; c++)
+        {
+            ws1.Cells[row, c + 1].Value = detailHeaders[c];
+            StyleHeader(ws1.Cells[row, c + 1], cBlueMid, cWhite);
+            ThinBorder(ws1.Cells[row, c + 1]);
+        }
+        ws1.Row(row).Height = 22;
+        ws1.View.FreezePanes(row + 1, 1);
+        ws1.Cells[row, 1, row, detailHeaders.Length].AutoFilter = true;
+        row++;
+
+        int stt = 1;
+        foreach (var item in data)
+        {
+            bool even  = stt % 2 == 0;
+            var  rowBg = even ? cLightBlue : cWhite;
+
+            ws1.Cells[row, 1].Value  = stt;
+            ws1.Cells[row, 2].Value  = item.Work_order;
+            ws1.Cells[row, 3].Value  = item.Item_code;
+            ws1.Cells[row, 4].Value  = item.Defect_Code;
+            ws1.Cells[row, 5].Value  = item.Defect_Name;
+            ws1.Cells[row, 6].Value  = item.Qty_NG;
+            ws1.Cells[row, 7].Value  = item.Operation;
+            ws1.Cells[row, 8].Value  = $"{item.Employer_code} {item.Employer_name}".Trim();
+            ws1.Cells[row, 9].Value  = item.Note;
+            ws1.Cells[row, 11].Value = item.Time_line?.ToString("dd/MM/yyyy HH:mm:ss");
+
+            ws1.Cells[row, 6].Style.Numberformat.Format = "#,##0";
+            ws1.Cells[row, 6].Style.Font.Bold = true;
+            if ((item.Qty_NG ?? 0) > 10)
+                ws1.Cells[row, 6].Style.Font.Color.SetColor(cRed);
+
+            // Operation pill style
+            SetFill(ws1.Cells[row, 7], cBlueMid);
+            ws1.Cells[row, 7].Style.Font.Color.SetColor(cWhite);
+            ws1.Cells[row, 7].Style.Font.Bold = true;
+            ws1.Cells[row, 7].Style.HorizontalAlignment = ExcelHorizontalAlignment.Center;
+
+            // Row alternate background (skip op cell which has its own bg)
+            foreach (int c in new[] { 1, 2, 3, 4, 5, 6, 8, 9, 11 })
+                SetFill(ws1.Cells[row, c], rowBg);
+
+            // Embed image
+            bool imgOk = false;
+            if (!string.IsNullOrWhiteSpace(item.Image_error))
+            {
+                var rel  = item.Image_error.TrimStart('/').Replace('/', Path.DirectorySeparatorChar);
+                var phys = Path.Combine(_webHostEnvironment.WebRootPath, rel);
+                if (System.IO.File.Exists(phys))
+                {
+                    try
+                    {
+                        var pic = ws1.Drawings.AddPicture($"img_{row}", new FileInfo(phys));
+                        pic.SetPosition(row - 1, 2, 9, 2); // row/col 0-based
+                        pic.SetSize(46, 46);
+                        ws1.Row(row).Height = 45;
+                        imgOk = true;
+                    }
+                    catch { }
+                }
+            }
+            if (!imgOk)
+            {
+                ws1.Cells[row, 10].Value = "—";
+                ws1.Row(row).Height = 18;
+            }
+
+            ws1.Cells[row, 1].Style.HorizontalAlignment  = ExcelHorizontalAlignment.Center;
+            ws1.Cells[row, 4].Style.HorizontalAlignment  = ExcelHorizontalAlignment.Center;
+            ws1.Cells[row, 11].Style.HorizontalAlignment = ExcelHorizontalAlignment.Center;
+            ThinBorder(ws1.Cells[row, 1, row, 11]);
+
+            row++;
+            stt++;
+        }
+
+        ws1.Column(1).Width  = 6;
+        ws1.Column(2).Width  = 16;
+        ws1.Column(3).Width  = 18;
+        ws1.Column(4).Width  = 13;
+        ws1.Column(5).Width  = 26;
+        ws1.Column(6).Width  = 10;
+        ws1.Column(7).Width  = 22;
+        ws1.Column(8).Width  = 22;
+        ws1.Column(9).Width  = 22;
+        ws1.Column(10).Width = 10;
+        ws1.Column(11).Width = 20;
+        ws1.PrinterSettings.PrintArea = ws1.Cells[1, 1, row - 1, 11];
+
+        /* ═══════════════════════════════════════════════════
+           TAB 2 – Defect by Operation
+        ═══════════════════════════════════════════════════ */
+        var ws2 = pkg.Workbook.Worksheets.Add("Defect by Operation");
+        ws2.View.ShowGridLines = false;
+        ws2.Cells.Style.Font.Name = "Calibri";
+        ws2.Cells.Style.Font.Size = 11;
+
+        int r2 = 1;
+        ws2.Cells[r2, 1, r2, 4].Merge = true;
+        ws2.Cells[r2, 1].Value = "Biểu đồ Defect theo Operation";
+        StyleHeader(ws2.Cells[r2, 1, r2, 4], cBlueDark, cWhite, 14);
+        ws2.Row(r2).Height = 30;
+        r2 += 2;
+
+        string[] opHdrs = { "Operation", "Qty NG", "Số lần phát sinh", "% Tổng" };
+        for (int c = 0; c < opHdrs.Length; c++)
+        {
+            ws2.Cells[r2, c + 1].Value = opHdrs[c];
+            StyleHeader(ws2.Cells[r2, c + 1], cBlueMid, cWhite);
+            ThinBorder(ws2.Cells[r2, c + 1]);
+        }
+        ws2.Row(r2).Height = 22;
+        ws2.View.FreezePanes(r2 + 1, 1);
+        int opDataStart = r2 + 1;
+        r2++;
+
+        int opIdx = 0;
+        foreach (var op in byOperation)
+        {
+            bool even = opIdx % 2 == 0;
+            SetFill(ws2.Cells[r2, 1, r2, 4], even ? cWhite : cLightBlue);
+            ws2.Cells[r2, 1].Value = op.Operation;
+            ws2.Cells[r2, 2].Value = op.QtyNG;
+            ws2.Cells[r2, 3].Value = op.Count;
+            ws2.Cells[r2, 4].Value = kpiQtyNG > 0 ? Math.Round((double)op.QtyNG / kpiQtyNG * 100, 1) : 0.0;
+            ws2.Cells[r2, 2].Style.Numberformat.Format = "#,##0";
+            ws2.Cells[r2, 4].Style.Numberformat.Format = "0.0";
+            ws2.Cells[r2, 2].Style.Font.Bold = true;
+            ws2.Cells[r2, 2].Style.Font.Color.SetColor(cRed);
+            ws2.Cells[r2, 2].Style.HorizontalAlignment = ExcelHorizontalAlignment.Center;
+            ws2.Cells[r2, 3].Style.HorizontalAlignment = ExcelHorizontalAlignment.Center;
+            ws2.Cells[r2, 4].Style.HorizontalAlignment = ExcelHorizontalAlignment.Center;
+            ThinBorder(ws2.Cells[r2, 1, r2, 4]);
+            r2++;
+            opIdx++;
+        }
+        int opDataEnd = r2 - 1;
+
+        if (byOperation.Count > 0)
+        {
+            var barChart = ws2.Drawings.AddChart("OperationChart", eChartType.BarClustered) as ExcelBarChart;
+            if (barChart != null)
+            {
+                barChart.SetPosition(r2 + 1, 0, 0, 0);
+                barChart.SetSize(620, 350);
+                var s = barChart.Series.Add(
+                    ws2.Cells[opDataStart, 2, opDataEnd, 2],
+                    ws2.Cells[opDataStart, 1, opDataEnd, 1]);
+                s.Header = "Qty NG";
+                barChart.Title.Text = "Defect theo Operation";
+                barChart.Legend.Position = eLegendPosition.Bottom;
+                barChart.YAxis.Title.Text = "Qty NG";
+                barChart.XAxis.Title.Text = "Operation";
+            }
+        }
+
+        ws2.Column(1).Width = 28;
+        ws2.Column(2).Width = 12;
+        ws2.Column(3).Width = 18;
+        ws2.Column(4).Width = 12;
+        ws2.PrinterSettings.PrintArea = ws2.Cells[1, 1, opDataEnd, 4];
+        EmbedChartImage(ws2, dto?.ChartImages?.ByOperation, opDataEnd + 2, 0, 800, 400, openStreams);
+
+        /* ═══════════════════════════════════════════════════
+           TAB 3 – Pareto Defect
+        ═══════════════════════════════════════════════════ */
+        var ws3 = pkg.Workbook.Worksheets.Add("Pareto Defect");
+        ws3.View.ShowGridLines = false;
+        ws3.Cells.Style.Font.Name = "Calibri";
+        ws3.Cells.Style.Font.Size = 11;
+
+        int r3 = 1;
+        ws3.Cells[r3, 1, r3, 5].Merge = true;
+        ws3.Cells[r3, 1].Value = "Biểu đồ Pareto Defect theo tên lỗi";
+        StyleHeader(ws3.Cells[r3, 1, r3, 5], cBlueDark, cWhite, 14);
+        ws3.Row(r3).Height = 30;
+        r3 += 2;
+
+        string[] paretoHdrs = { "STT", "Defect Name", "Qty NG", "% Tổng", "% Tích Lũy" };
+        for (int c = 0; c < paretoHdrs.Length; c++)
+        {
+            ws3.Cells[r3, c + 1].Value = paretoHdrs[c];
+            StyleHeader(ws3.Cells[r3, c + 1], cBlueMid, cWhite);
+            ThinBorder(ws3.Cells[r3, c + 1]);
+        }
+        ws3.Row(r3).Height = 22;
+        ws3.View.FreezePanes(r3 + 1, 1);
+        int paretoDataStart = r3 + 1;
+        r3++;
+
+        int pStt = 1;
+        foreach (var p in paretoList)
+        {
+            bool even = pStt % 2 == 0;
+            SetFill(ws3.Cells[r3, 1, r3, 5], even ? cLightBlue : cWhite);
+            ws3.Cells[r3, 1].Value = pStt++;
+            ws3.Cells[r3, 2].Value = $"{p.Code} - {p.Name}";
+            ws3.Cells[r3, 3].Value = p.QtyNG;
+            ws3.Cells[r3, 4].Value = p.PctOfTotal;
+            ws3.Cells[r3, 5].Value = p.CumPct;
+            ws3.Cells[r3, 3].Style.Numberformat.Format = "#,##0";
+            ws3.Cells[r3, 4].Style.Numberformat.Format = "0.0";
+            ws3.Cells[r3, 5].Style.Numberformat.Format = "0.0";
+            ws3.Cells[r3, 3].Style.Font.Bold = true;
+            ws3.Cells[r3, 3].Style.Font.Color.SetColor(cRed);
+            if (p.CumPct <= 80) ws3.Cells[r3, 5].Style.Font.Color.SetColor(cGreen);
+            ws3.Cells[r3, 1].Style.HorizontalAlignment = ExcelHorizontalAlignment.Center;
+            ws3.Cells[r3, 3].Style.HorizontalAlignment = ExcelHorizontalAlignment.Center;
+            ws3.Cells[r3, 4].Style.HorizontalAlignment = ExcelHorizontalAlignment.Center;
+            ws3.Cells[r3, 5].Style.HorizontalAlignment = ExcelHorizontalAlignment.Center;
+            ThinBorder(ws3.Cells[r3, 1, r3, 5]);
+            r3++;
+        }
+        int paretoDataEnd = r3 - 1;
+
+        // Pareto chart: bar (Qty NG) + line (% Tích Lũy) combo
+        if (paretoList.Count > 0)
+        {
+            var paretoChart = ws3.Drawings.AddChart("ParetoChart", eChartType.BarClustered);
+            paretoChart.SetPosition(r3 + 1, 0, 0, 0);
+            paretoChart.SetSize(720, 360);
+            var barSeries = paretoChart.Series.Add(
+                ws3.Cells[paretoDataStart, 3, paretoDataEnd, 3],
+                ws3.Cells[paretoDataStart, 2, paretoDataEnd, 2]);
+            barSeries.Header = "Qty NG";
+
+            try
+            {
+                var lineType   = paretoChart.PlotArea.ChartTypes.Add(eChartType.Line);
+                var lineSeriesP = lineType.Series.Add(
+                    ws3.Cells[paretoDataStart, 5, paretoDataEnd, 5],
+                    ws3.Cells[paretoDataStart, 2, paretoDataEnd, 2]);
+                lineSeriesP.Header = "% Tích Lũy";
+                lineType.UseSecondaryAxis = true;
+            }
+            catch { /* secondary axis optional – base chart still renders */ }
+
+            paretoChart.Title.Text = "Pareto Defect theo tên lỗi";
+            paretoChart.Legend.Position = eLegendPosition.Bottom;
+        }
+
+        ws3.Column(1).Width = 6;
+        ws3.Column(2).Width = 34;
+        ws3.Column(3).Width = 12;
+        ws3.Column(4).Width = 10;
+        ws3.Column(5).Width = 12;
+        ws3.PrinterSettings.PrintArea = ws3.Cells[1, 1, paretoDataEnd, 5];
+        EmbedChartImage(ws3, dto?.ChartImages?.Pareto, paretoDataEnd + 2, 0, 900, 400, openStreams);
+
+        /* ═══════════════════════════════════════════════════
+           TAB 4 – Top 10 Operations
+        ═══════════════════════════════════════════════════ */
+        var ws4 = pkg.Workbook.Worksheets.Add("Top 10 Operations");
+        ws4.View.ShowGridLines = false;
+        ws4.Cells.Style.Font.Name = "Calibri";
+        ws4.Cells.Style.Font.Size = 11;
+
+        int r4 = 1;
+        ws4.Cells[r4, 1, r4, 4].Merge = true;
+        ws4.Cells[r4, 1].Value = "Biểu đồ Top 10 Operation nhiều lỗi nhất";
+        StyleHeader(ws4.Cells[r4, 1, r4, 4], cBlueDark, cWhite, 14);
+        ws4.Row(r4).Height = 30;
+        r4 += 2;
+
+        string[] top10Hdrs = { "Rank", "Operation", "Qty NG", "% Tổng" };
+        for (int c = 0; c < top10Hdrs.Length; c++)
+        {
+            ws4.Cells[r4, c + 1].Value = top10Hdrs[c];
+            StyleHeader(ws4.Cells[r4, c + 1], cBlueMid, cWhite);
+            ThinBorder(ws4.Cells[r4, c + 1]);
+        }
+        ws4.Row(r4).Height = 22;
+        int top10DataStart = r4 + 1;
+        r4++;
+
+        int rankNum = 1;
+        foreach (var op in top10Ops)
+        {
+            bool even = rankNum % 2 == 0;
+            SetFill(ws4.Cells[r4, 1, r4, 4], even ? cLightBlue : cWhite);
+            ws4.Cells[r4, 1].Value = rankNum++;
+            ws4.Cells[r4, 2].Value = op.Operation;
+            ws4.Cells[r4, 3].Value = op.QtyNG;
+            ws4.Cells[r4, 4].Value = kpiQtyNG > 0 ? Math.Round((double)op.QtyNG / kpiQtyNG * 100, 1) : 0.0;
+            ws4.Cells[r4, 3].Style.Numberformat.Format = "#,##0";
+            ws4.Cells[r4, 4].Style.Numberformat.Format = "0.0";
+            ws4.Cells[r4, 3].Style.Font.Bold = true;
+            ws4.Cells[r4, 3].Style.Font.Color.SetColor(cRed);
+            ws4.Cells[r4, 1].Style.HorizontalAlignment = ExcelHorizontalAlignment.Center;
+            ws4.Cells[r4, 3].Style.HorizontalAlignment = ExcelHorizontalAlignment.Center;
+            ws4.Cells[r4, 4].Style.HorizontalAlignment = ExcelHorizontalAlignment.Center;
+            ThinBorder(ws4.Cells[r4, 1, r4, 4]);
+            r4++;
+        }
+        int top10DataEnd = r4 - 1;
+
+        // Doughnut chart
+        if (top10Ops.Count > 0)
+        {
+            var donutChart = ws4.Drawings.AddChart("Top10Chart", eChartType.Doughnut) as ExcelDoughnutChart;
+            if (donutChart != null)
+            {
+                donutChart.SetPosition(r4 + 1, 0, 0, 0);
+                donutChart.SetSize(520, 400);
+                var s = donutChart.Series.Add(
+                    ws4.Cells[top10DataStart, 3, top10DataEnd, 3],
+                    ws4.Cells[top10DataStart, 2, top10DataEnd, 2]);
+                s.Header = "Qty NG";
+                donutChart.Title.Text = "Top 10 Operations nhiều lỗi nhất";
+                donutChart.Legend.Position = eLegendPosition.Right;
+            }
+        }
+
+        ws4.Column(1).Width = 8;
+        ws4.Column(2).Width = 28;
+        ws4.Column(3).Width = 12;
+        ws4.Column(4).Width = 10;
+        ws4.PrinterSettings.PrintArea = ws4.Cells[1, 1, top10DataEnd, 4];
+        EmbedChartImage(ws4, dto?.ChartImages?.Top10, top10DataEnd + 2, 0, 600, 450, openStreams);
+
+        /* ═══════════════════════════════════════════════════
+           TAB 5 – Defect Trend
+        ═══════════════════════════════════════════════════ */
+        var ws5 = pkg.Workbook.Worksheets.Add("Defect Trend");
+        ws5.View.ShowGridLines = false;
+        ws5.Cells.Style.Font.Name = "Calibri";
+        ws5.Cells.Style.Font.Size = 11;
+
+        int r5 = 1;
+        ws5.Cells[r5, 1, r5, 4].Merge = true;
+        ws5.Cells[r5, 1].Value = "Defect Trend theo ngày";
+        StyleHeader(ws5.Cells[r5, 1, r5, 4], cBlueDark, cWhite, 14);
+        ws5.Row(r5).Height = 30;
+        r5 += 2;
+
+        string[] trendHdrs = { "Ngày", "Qty NG", "Số lần phát sinh lỗi", "Moving Avg 7 ngày" };
+        for (int c = 0; c < trendHdrs.Length; c++)
+        {
+            ws5.Cells[r5, c + 1].Value = trendHdrs[c];
+            StyleHeader(ws5.Cells[r5, c + 1], cBlueMid, cWhite);
+            ThinBorder(ws5.Cells[r5, c + 1]);
+        }
+        ws5.Row(r5).Height = 22;
+        ws5.View.FreezePanes(r5 + 1, 1);
+        int trendDataStart = r5 + 1;
+        r5++;
+
+        for (int i = 0; i < dailyTrend.Count; i++)
+        {
+            var d = dailyTrend[i];
+            bool even = i % 2 == 0;
+            SetFill(ws5.Cells[r5, 1, r5, 4], even ? cWhite : cLightBlue);
+            ws5.Cells[r5, 1].Value = d.Date.ToString("dd/MM/yyyy");
+            ws5.Cells[r5, 2].Value = d.QtyNG;
+            ws5.Cells[r5, 3].Value = d.Count;
+            if (movingAvg[i].HasValue) ws5.Cells[r5, 4].Value = movingAvg[i]!.Value;
+            else                       ws5.Cells[r5, 4].Value = "—";
+            ws5.Cells[r5, 2].Style.Numberformat.Format = "#,##0";
+            ws5.Cells[r5, 2].Style.Font.Bold = true;
+            ws5.Cells[r5, 2].Style.Font.Color.SetColor(cRed);
+            ws5.Cells[r5, 1].Style.HorizontalAlignment = ExcelHorizontalAlignment.Center;
+            ws5.Cells[r5, 2].Style.HorizontalAlignment = ExcelHorizontalAlignment.Center;
+            ws5.Cells[r5, 3].Style.HorizontalAlignment = ExcelHorizontalAlignment.Center;
+            ws5.Cells[r5, 4].Style.HorizontalAlignment = ExcelHorizontalAlignment.Center;
+            ThinBorder(ws5.Cells[r5, 1, r5, 4]);
+            r5++;
+        }
+        int trendDataEnd = r5 - 1;
+
+        // Multi-series line chart
+        if (dailyTrend.Count > 0)
+        {
+            var lineChart = ws5.Drawings.AddChart("TrendChart", eChartType.Line) as ExcelLineChart;
+            if (lineChart != null)
+            {
+                lineChart.SetPosition(r5 + 1, 0, 0, 0);
+                lineChart.SetSize(820, 320);
+
+                var s1 = lineChart.Series.Add(
+                    ws5.Cells[trendDataStart, 2, trendDataEnd, 2],
+                    ws5.Cells[trendDataStart, 1, trendDataEnd, 1]);
+                s1.Header = "Qty NG";
+
+                var s2 = lineChart.Series.Add(
+                    ws5.Cells[trendDataStart, 3, trendDataEnd, 3],
+                    ws5.Cells[trendDataStart, 1, trendDataEnd, 1]);
+                s2.Header = "Số lần phát sinh lỗi";
+
+                // Moving average only from row 7 onward (first 6 are null)
+                int maStart = trendDataStart + 6;
+                if (maStart <= trendDataEnd)
+                {
+                    var s3 = lineChart.Series.Add(
+                        ws5.Cells[maStart, 4, trendDataEnd, 4],
+                        ws5.Cells[maStart, 1, trendDataEnd, 1]);
+                    s3.Header = "Moving Avg 7 ngày";
+                }
+
+                lineChart.Title.Text = "Defect Trend theo ngày";
+                lineChart.Legend.Position = eLegendPosition.Top;
+                lineChart.YAxis.Title.Text  = "Qty NG";
+                lineChart.XAxis.Title.Text  = "Ngày";
+            }
+        }
+
+        ws5.Column(1).Width = 14;
+        ws5.Column(2).Width = 12;
+        ws5.Column(3).Width = 22;
+        ws5.Column(4).Width = 18;
+        ws5.PrinterSettings.PrintArea = ws5.Cells[1, 1, trendDataEnd, 4];
+        EmbedChartImage(ws5, dto?.ChartImages?.Trend, trendDataEnd + 2, 0, 1000, 350, openStreams);
+
+        // ── Return file ──
+        var bytes = pkg.GetAsByteArray();
+        foreach (var s in openStreams) s.Dispose();
+        return File(bytes,
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            $"DefectReport_{DateTime.Now:yyyyMMdd_HHmmss}.xlsx");
+        }
+        catch (Exception ex)
+        {
+            Response.StatusCode = 500;
+            return Content($"Lỗi xuất Excel: {ex.Message}", "text/plain; charset=utf-8");
+        }
     }
-}
+
+    private static void EmbedChartImage(ExcelWorksheet ws, string? base64,
+                                        int startRow, int startCol,
+                                        int widthPx, int heightPx,
+                                        List<MemoryStream> openStreams)
+    {
+        if (string.IsNullOrEmpty(base64)) return;
+        try
+        {
+            var comma = base64.IndexOf(',');
+            var data  = comma >= 0 ? base64[(comma + 1)..] : base64;
+            var bytes = Convert.FromBase64String(data);
+            var ms    = new MemoryStream(bytes); // no 'using' — kept alive until GetAsByteArray()
+            ms.Position = 0;
+            openStreams.Add(ms);
+            var picName = $"chartImg_{ws.Name}";
+            var pic = ws.Drawings.AddPicture(picName, ms);
+            pic.SetPosition(startRow, 0, startCol, 0);
+            pic.SetSize(widthPx, heightPx);
+        }
+        catch { /* skip silently if image data is invalid */ }
+    }
+
+    } // DefectController
+} // namespace
 

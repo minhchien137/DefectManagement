@@ -161,6 +161,8 @@ C:\DefectManagement\bin\Debug\net8.0\ClosedXML.dll
 C:\DefectManagement\bin\Debug\net8.0\ClosedXML.Parser.dll
 C:\DefectManagement\bin\Debug\net8.0\DocumentFormat.OpenXml.dll
 C:\DefectManagement\bin\Debug\net8.0\DocumentFormat.OpenXml.Framework.dll
+C:\DefectManagement\bin\Debug\net8.0\EPPlus.dll
+C:\DefectManagement\bin\Debug\net8.0\EPPlus.Interfaces.dll
 C:\DefectManagement\bin\Debug\net8.0\ExcelNumberFormat.dll
 C:\DefectManagement\bin\Debug\net8.0\Humanizer.dll
 C:\DefectManagement\bin\Debug\net8.0\Microsoft.Bcl.AsyncInterfaces.dll
@@ -174,6 +176,8 @@ C:\DefectManagement\bin\Debug\net8.0\Microsoft.EntityFrameworkCore.Abstractions.
 C:\DefectManagement\bin\Debug\net8.0\Microsoft.EntityFrameworkCore.Design.dll
 C:\DefectManagement\bin\Debug\net8.0\Microsoft.EntityFrameworkCore.Relational.dll
 C:\DefectManagement\bin\Debug\net8.0\Microsoft.EntityFrameworkCore.SqlServer.dll
+C:\DefectManagement\bin\Debug\net8.0\Microsoft.Extensions.Configuration.FileExtensions.dll
+C:\DefectManagement\bin\Debug\net8.0\Microsoft.Extensions.Configuration.Json.dll
 C:\DefectManagement\bin\Debug\net8.0\Microsoft.Extensions.DependencyModel.dll
 C:\DefectManagement\bin\Debug\net8.0\Microsoft.Identity.Client.dll
 C:\DefectManagement\bin\Debug\net8.0\Microsoft.Identity.Client.Extensions.Msal.dll
@@ -183,6 +187,7 @@ C:\DefectManagement\bin\Debug\net8.0\Microsoft.IdentityModel.Logging.dll
 C:\DefectManagement\bin\Debug\net8.0\Microsoft.IdentityModel.Protocols.dll
 C:\DefectManagement\bin\Debug\net8.0\Microsoft.IdentityModel.Protocols.OpenIdConnect.dll
 C:\DefectManagement\bin\Debug\net8.0\Microsoft.IdentityModel.Tokens.dll
+C:\DefectManagement\bin\Debug\net8.0\Microsoft.IO.RecyclableMemoryStream.dll
 C:\DefectManagement\bin\Debug\net8.0\Microsoft.SqlServer.Server.dll
 C:\DefectManagement\bin\Debug\net8.0\Microsoft.Win32.SystemEvents.dll
 C:\DefectManagement\bin\Debug\net8.0\Mono.TextTemplating.dll
@@ -201,7 +206,9 @@ C:\DefectManagement\bin\Debug\net8.0\System.IdentityModel.Tokens.Jwt.dll
 C:\DefectManagement\bin\Debug\net8.0\System.IO.Packaging.dll
 C:\DefectManagement\bin\Debug\net8.0\System.Memory.Data.dll
 C:\DefectManagement\bin\Debug\net8.0\System.Runtime.Caching.dll
+C:\DefectManagement\bin\Debug\net8.0\System.Security.Cryptography.Pkcs.dll
 C:\DefectManagement\bin\Debug\net8.0\System.Security.Cryptography.ProtectedData.dll
+C:\DefectManagement\bin\Debug\net8.0\System.Security.Cryptography.Xml.dll
 C:\DefectManagement\bin\Debug\net8.0\System.Security.Permissions.dll
 C:\DefectManagement\bin\Debug\net8.0\System.Windows.Extensions.dll
 C:\DefectManagement\bin\Debug\net8.0\cs\Microsoft.CodeAnalysis.resources.dll
@@ -266,6 +273,7 @@ C:\DefectManagement\bin\Debug\net8.0\runtimes\win\lib\net6.0\Microsoft.Win32.Sys
 C:\DefectManagement\bin\Debug\net8.0\runtimes\unix\lib\net6.0\System.Drawing.Common.dll
 C:\DefectManagement\bin\Debug\net8.0\runtimes\win\lib\net6.0\System.Drawing.Common.dll
 C:\DefectManagement\bin\Debug\net8.0\runtimes\win\lib\net6.0\System.Runtime.Caching.dll
+C:\DefectManagement\bin\Debug\net8.0\runtimes\win\lib\net8.0\System.Security.Cryptography.Pkcs.dll
 C:\DefectManagement\bin\Debug\net8.0\runtimes\win\lib\net6.0\System.Security.Cryptography.ProtectedData.dll
 C:\DefectManagement\bin\Debug\net8.0\runtimes\win\lib\net6.0\System.Windows.Extensions.dll
 C:\DefectManagement\obj\Debug\net8.0\DefectManagement.csproj.AssemblyReference.cache
@@ -295,11 +303,3 @@ C:\DefectManagement\obj\Debug\net8.0\refint\DefectManagement.dll
 C:\DefectManagement\obj\Debug\net8.0\DefectManagement.pdb
 C:\DefectManagement\obj\Debug\net8.0\DefectManagement.genruntimeconfig.cache
 C:\DefectManagement\obj\Debug\net8.0\ref\DefectManagement.dll
-C:\DefectManagement\bin\Debug\net8.0\EPPlus.dll
-C:\DefectManagement\bin\Debug\net8.0\EPPlus.Interfaces.dll
-C:\DefectManagement\bin\Debug\net8.0\Microsoft.Extensions.Configuration.FileExtensions.dll
-C:\DefectManagement\bin\Debug\net8.0\Microsoft.Extensions.Configuration.Json.dll
-C:\DefectManagement\bin\Debug\net8.0\Microsoft.IO.RecyclableMemoryStream.dll
-C:\DefectManagement\bin\Debug\net8.0\System.Security.Cryptography.Pkcs.dll
-C:\DefectManagement\bin\Debug\net8.0\System.Security.Cryptography.Xml.dll
-C:\DefectManagement\bin\Debug\net8.0\runtimes\win\lib\net8.0\System.Security.Cryptography.Pkcs.dll

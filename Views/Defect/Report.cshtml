@@ -460,13 +460,18 @@
 
         <!-- ===== EXPORT ===== -->
         <div class="mb-3 text-end">
-            <a href="@Url.Action("ExportDefectReport", new {
-                fromDate  = fromDate,  toDate    = toDate,
-                workOrder = workOrder, operation = operation,
-                defectCode = defectCode, itemCode = itemCode
-            })" class="btn-export">
-                <i class="fas fa-file-excel"></i> Xuất Excel
-            </a>
+            <button id="btnExport" type="button" onclick="exportExcel()" class="btn-export">
+                <i class="fas fa-file-excel"></i> Xuất Excel (5 tabs)
+            </button>
+        </div>
+
+        <!-- Export loading overlay -->
+        <div id="exportOverlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.52);
+             z-index:9999;align-items:center;justify-content:center;flex-direction:column;gap:14px;">
+            <div class="spinner-border text-light" style="width:3.2rem;height:3.2rem;" role="status"></div>
+            <span class="text-white fw-semibold" style="font-size:1.05rem;letter-spacing:.3px">
+                Đang xuất Excel, vui lòng chờ…
+            </span>
         </div>
 
         <!-- ===== CHARTS ROW 1 ===== -->
@@ -960,10 +965,13 @@ function showImage(src) {
     const paretoMerged = mergePareto(paretoLabels, paretoQtyNG);
     const totalQtyNG_all = opMerged.qty.reduce((s,v) => s+v, 0);
 
+    // Register datalabels plugin globally for all charts
+    Chart.register(ChartDataLabels);
+
     /* ============================================================
        CHART 1 – DEFECT BY OPERATION (gộp)
     ============================================================ */
-    new Chart(document.getElementById('operationChart'), {
+    const chartByOperation = new Chart(document.getElementById('operationChart'), {
         type: 'bar',
         data: {
             labels: opMerged.labels,
@@ -973,7 +981,14 @@ function showImage(src) {
                 backgroundColor: opMerged.labels.map((_,i) => rgba(PALETTE[i % PALETTE.length], 0.85)),
                 borderColor:     opMerged.labels.map((_,i) => PALETTE[i % PALETTE.length]),
                 borderWidth: 1,
-                borderRadius: 5
+                borderRadius: 5,
+                datalabels: {
+                    anchor: 'center', align: 'center',
+                    color: 'white',
+                    font: { weight: 'bold', size: 12 },
+                    display: (ctx) => ctx.dataset.data[ctx.dataIndex] > 0,
+                    formatter: (value) => value.toLocaleString('vi-VN')
+                }
             }]
         },
         options: {
@@ -1003,7 +1018,7 @@ function showImage(src) {
     /* ============================================================
        CHART 2 – PARETO DEFECT NAME (gộp theo tên)
     ============================================================ */
-    new Chart(document.getElementById('paretoChart'), {
+    const chartPareto = new Chart(document.getElementById('paretoChart'), {
         type: 'bar',
         data: {
             labels: paretoMerged.labels.slice(0, 15),
@@ -1014,7 +1029,14 @@ function showImage(src) {
                     data: paretoMerged.qty.slice(0, 15),
                     backgroundColor: rgba('#e53e3e', 0.8),
                     borderRadius: 4,
-                    yAxisID: 'y'
+                    yAxisID: 'y',
+                    datalabels: {
+                        anchor: 'center', align: 'center',
+                        color: 'white',
+                        font: { weight: 'bold', size: 11 },
+                        display: (ctx) => ctx.dataset.data[ctx.dataIndex] > 0,
+                        formatter: (value) => value.toLocaleString('vi-VN')
+                    }
                 },
                 {
                     type: 'line',
@@ -1026,7 +1048,21 @@ function showImage(src) {
                     pointRadius: 4,
                     tension: 0.3,
                     fill: false,
-                    yAxisID: 'y1'
+                    yAxisID: 'y1',
+                    datalabels: {
+                        anchor: 'top', align: 'top',
+                        color: '#92400e',
+                        font: { weight: 'bold', size: 10 },
+                        display: (ctx) => {
+                            const i = ctx.dataIndex;
+                            const len = ctx.dataset.data.length;
+                            return i === 0 || i === len - 1 || i % 3 === 0;
+                        },
+                        formatter: (value) => value.toFixed(1) + '%',
+                        backgroundColor: 'rgba(255,255,255,0.8)',
+                        borderRadius: 3,
+                        padding: 2
+                    }
                 }
             ]
         },
@@ -1063,7 +1099,7 @@ function showImage(src) {
     const pieOpVals   = pieRaw.map(x => x.qty);
     const pieOpTotal  = pieOpVals.reduce((s,v) => s+v, 0);
 
-    new Chart(document.getElementById('pieChart'), {
+    const chartTop10 = new Chart(document.getElementById('pieChart'), {
         type: 'doughnut',
         data: {
             labels: pieOpLabels,
@@ -1071,10 +1107,23 @@ function showImage(src) {
                 data: pieOpVals,
                 backgroundColor: PALETTE.slice(0, pieOpVals.length).map(c => rgba(c, 0.88)),
                 borderColor: '#fff',
-                borderWidth: 2
+                borderWidth: 2,
+                datalabels: {
+                    anchor: 'center', align: 'center',
+                    color: 'white',
+                    font: { weight: 'bold', size: 11 },
+                    display: (ctx) => {
+                        const total = ctx.dataset.data.reduce((a, b) => a + b, 0);
+                        return (ctx.dataset.data[ctx.dataIndex] / total * 100) >= 3;
+                    },
+                    formatter: (value, ctx) => {
+                        const total = ctx.dataset.data.reduce((a, b) => a + b, 0);
+                        const pct = (value / total * 100).toFixed(1);
+                        return pct + '%';
+                    }
+                }
             }]
         },
-        plugins: [ChartDataLabels],
         options: {
             responsive: true, maintainAspectRatio: false, cutout: '52%',
             plugins: {
@@ -1088,14 +1137,6 @@ function showImage(src) {
                             return ` ${ctx.label}: ${ctx.parsed} (${pct}%)`;
                         }
                     }
-                },
-                datalabels: {
-                    formatter: v => {
-                        const pct = pieOpTotal > 0 ? (v/pieOpTotal*100).toFixed(1) : 0;
-                        return pct >= 5 ? pct + '%' : '';
-                    },
-                    color: '#fff', font: { weight: 'bold', size: 10 },
-                    align: 'center', anchor: 'center'
                 }
             },
             animation: { duration: 1300 }
@@ -1114,7 +1155,7 @@ function showImage(src) {
     gradBlue.addColorStop(0, rgba('#2563eb', .3));
     gradBlue.addColorStop(1, rgba('#2563eb', .02));
 
-    new Chart(trendCtxEl, {
+    const chartTrend = new Chart(trendCtxEl, {
         type: 'line',
         data: {
             labels: trendDates,
@@ -1128,7 +1169,8 @@ function showImage(src) {
                     fill: true, tension: 0.4,
                     pointRadius: 4, pointHoverRadius: 8,
                     pointBackgroundColor: '#e53e3e',
-                    yAxisID: 'y'
+                    yAxisID: 'y',
+                    datalabels: { display: false }
                 },
                 {
                     label: 'Số lần phát sinh lỗi',
@@ -1140,7 +1182,8 @@ function showImage(src) {
                     fill: true, tension: 0.4,
                     pointRadius: 3, pointHoverRadius: 7,
                     pointBackgroundColor: '#2563eb',
-                    yAxisID: 'y1'
+                    yAxisID: 'y1',
+                    datalabels: { display: false }
                 },
                 {
                     label: 'Moving Avg 7 ngày',
@@ -1151,7 +1194,17 @@ function showImage(src) {
                     borderDash: [8, 4],
                     fill: false, tension: 0.4,
                     pointRadius: 0, pointHoverRadius: 6,
-                    yAxisID: 'y'
+                    yAxisID: 'y',
+                    datalabels: {
+                        anchor: 'top', align: 'top',
+                        color: '#92400e',
+                        font: { size: 9 },
+                        display: (ctx) => ctx.dataIndex % 10 === 0 && ctx.dataset.data[ctx.dataIndex] != null,
+                        formatter: (value) => value != null ? value.toFixed(0) : '',
+                        backgroundColor: 'rgba(255,255,255,0.75)',
+                        borderRadius: 3,
+                        padding: { top: 1, bottom: 1, left: 3, right: 3 }
+                    }
                 }
             ]
         },
@@ -1186,6 +1239,63 @@ function showImage(src) {
             animation: { duration: 1600, easing: 'easeOutQuart' }
         }
     });
+
+    /* ============================================================
+       EXPORT EXCEL  –  POST chart images as base64 PNG
+    ============================================================ */
+    async function exportExcel() {
+        const btn     = document.getElementById('btnExport');
+        const overlay = document.getElementById('exportOverlay');
+
+        btn.disabled = true;
+        overlay.style.display = 'flex';
+
+        try {
+            const form = document.getElementById('filterForm');
+            const get  = name => (form.querySelector(`[name="${name}"]`)?.value ?? '');
+
+            const payload = {
+                dateFrom:   get('fromDate'),
+                dateTo:     get('toDate'),
+                workOrder:  get('workOrder'),
+                operation:  get('operation'),
+                defectCode: get('defectCode'),
+                chartImages: {
+                    byOperation: chartByOperation?.toBase64Image('image/png', 1.0) ?? null,
+                    pareto:      chartPareto?.toBase64Image('image/png', 1.0)      ?? null,
+                    top10:       chartTop10?.toBase64Image('image/png', 1.0)       ?? null,
+                    trend:       chartTrend?.toBase64Image('image/png', 1.0)       ?? null
+                }
+            };
+
+            const response = await fetch('@Url.Action("ExportDefectExcel", "Defect")', {
+                method:  'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body:    JSON.stringify(payload)
+            });
+
+            if (!response.ok) {
+                const msg = await response.text().catch(() => response.statusText);
+                throw new Error(msg || `HTTP ${response.status}`);
+            }
+
+            const blob = await response.blob();
+            const url  = URL.createObjectURL(blob);
+            const a    = document.createElement('a');
+            a.href     = url;
+            a.download = `DefectReport_${new Date().toISOString().slice(0, 10)}.xlsx`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+
+        } catch (err) {
+            alert('Lỗi xuất Excel: ' + err.message);
+        } finally {
+            btn.disabled = false;
+            overlay.style.display = 'none';
+        }
+    }
     </script>
 }
 </body>
