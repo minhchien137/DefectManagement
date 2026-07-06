@@ -10,24 +10,23 @@
 <div class="toast-container" id="toastContainer"></div>
 
 <!-- Night Shift Modal -->
-<div id="nightShiftModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:9999; align-items:center; justify-content:center;">
-    <div style="background:#fff; border-radius:12px; padding:32px 28px; max-width:420px; width:90%; box-shadow:0 8px 32px rgba(0,0,0,0.2); text-align:center;">
-        <div style="font-size:2.5rem; margin-bottom:12px;">🌙</div>
-        <h3 style="margin:0 0 10px; color:#1a237e; font-size:1.2rem;">Phát hiện ca đêm</h3>
-        <p style="color:#555; margin:0 0 8px; font-size:0.95rem;">
-            Hiện tại là <strong id="modalCurrentTime"></strong>.
+<div id="nightShiftModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.55); z-index:9999; align-items:center; justify-content:center;">
+    <div style="background:#fff; border:1px solid #e4e4e7; border-radius:12px; padding:32px 28px; max-width:420px; width:90%; box-shadow:0 1px 3px rgba(0,0,0,.08); text-align:center;">
+        <h3 style="margin:0 0 10px; color:#09090b; font-size:1.05rem; font-weight:800; letter-spacing:-.3px;">Phát hiện ca đêm</h3>
+        <p style="color:#71717a; margin:0 0 8px; font-size:0.875rem;">
+            Hiện tại là <strong id="modalCurrentTime" style="color:#09090b;"></strong>.
         </p>
-        <p style="color:#555; margin:0 0 24px; font-size:0.95rem;">
-            Bạn đang muốn nhập <strong>defect</strong> cho <strong>ca đêm</strong> không?
+        <p style="color:#71717a; margin:0 0 24px; font-size:0.875rem;">
+            Bạn đang muốn nhập <strong style="color:#09090b;">defect</strong> cho <strong style="color:#dc2626;">ca đêm</strong> không?
         </p>
         <div style="display:flex; gap:12px; justify-content:center;">
             <button id="btnNightShiftYes"
-                style="padding:10px 28px; background:#1976d2; color:#fff; border:none; border-radius:8px; font-size:1rem; cursor:pointer; font-weight:600;">
-                ✅ Có
+                style="padding:10px 28px; background:#dc2626; color:#fff; border:none; border-radius:8px; font-size:0.8rem; cursor:pointer; font-weight:700; text-transform:uppercase; letter-spacing:.5px; transition:background .15s;">
+                Có
             </button>
             <button id="btnNightShiftNo"
-                style="padding:10px 28px; background:#e53935; color:#fff; border:none; border-radius:8px; font-size:1rem; cursor:pointer; font-weight:600;">
-                ❌ Không, ca ngày!
+                style="padding:10px 28px; background:#3f3f46; color:#fff; border:none; border-radius:8px; font-size:0.8rem; cursor:pointer; font-weight:700; text-transform:uppercase; letter-spacing:.5px; transition:background .15s;">
+                Không, ca ngày!
             </button>
         </div>
     </div>
@@ -35,7 +34,7 @@
 
 <div class="defect-form-container">
     <div class="form-header">
-        <h1 class="form-title">Defect Management</h1>
+        <h1 class="form-title">Nhập dữ liệu lỗi</h1>
     </div>
 
     <form asp-action="Create" id="defectForm">
@@ -44,11 +43,11 @@
                 <label class="form-label">SVN Code</label>
                 <input id="Employer_code" name="Employer_code" class="form-control" placeholder="Nhập mã SVN..." />
                 <div id="nameEmployerDisplay"
-                    style="margin-top: 5px; font-weight: bold; color: #1976d2; font-size: 0.85rem;">
+                    style="margin-top: 5px; font-weight: 700; color: #dc2626; font-size: 0.8rem;">
                 </div>
                 <div style="margin-top: 5px;">
                     <button type="button"
-                        style="width:60px; height:30px; border:none; font-size:14px; color:white; border-radius:6px; background-color:#fa6d6d;"
+                        style="padding:4px 12px; border:none; font-size:10px; font-weight:700; color:white; border-radius:6px; background-color:#dc2626; cursor:pointer; text-transform:uppercase; letter-spacing:.4px;"
                         onclick="deleteSVNField('Employer_code', this)">Xóa</button>
                 </div>
             </div>
@@ -57,11 +56,11 @@
                 <label class="form-label">Work Order</label>
                 <input id="WorkOrder" name="WorkOrder" class="form-control" placeholder="Nhập số Work Order..." />
                 <div id="productionCodeDisplay"
-                    style="margin-top: 5px; font-weight: bold; color: #1976d2; font-size: 0.85rem;">
+                    style="margin-top: 5px; font-weight: 700; color: #dc2626; font-size: 0.8rem;">
                 </div>
                 <div style="margin-top: 5px;">
                     <button type="button"
-                        style="width:60px; height:30px; border:none; font-size:14px; color:white; border-radius:6px; background-color:#fa6d6d;"
+                        style="padding:4px 12px; border:none; font-size:10px; font-weight:700; color:white; border-radius:6px; background-color:#dc2626; cursor:pointer; text-transform:uppercase; letter-spacing:.4px;"
                         onclick="deleteWorkOrderField('WorkOrder', this)">Xóa</button>
                 </div>
             </div>
@@ -541,6 +540,11 @@
                 return;
             }
 
+            if (!currentProductCode) {
+                showToast("Hệ thống chưa xác nhận Work Order. Vui lòng click ra ngoài ô Work Order và thử lại!", 'error', 3000);
+                return;
+            }
+
             // === Kiểm tra giờ: 00h - 8h ===
             const currentHour = new Date().getHours();
             let isNightShift = false;
@@ -654,9 +658,33 @@
 
             if (employerCode) {
                 $('#Employer_code').val(employerCode);
+                // Auto-lookup tên nhân viên
+                $.ajax({
+                    url: '/api/Odoo/SearchName',
+                    type: 'GET',
+                    data: { nameEmployer: employerCode },
+                    success: function (res) {
+                        if (res && res.nameEmployer) {
+                            currentNameEmployer = res.nameEmployer;
+                            $("#nameEmployerDisplay").text("Tên nhân viên : " + currentNameEmployer);
+                        }
+                    }
+                });
             }
             if (workOrder) {
                 $('#WorkOrder').val(workOrder);
+                // Auto-lookup productCode để tránh lỗi Item_code rỗng khi submit
+                $.ajax({
+                    url: '/api/Odoo/search',
+                    type: 'GET',
+                    data: { productionCode: workOrder },
+                    success: function (res) {
+                        if (res && res.productCode) {
+                            currentProductCode = res.productCode;
+                            $("#productionCodeDisplay").text("Production Code: " + currentProductCode);
+                        }
+                    }
+                });
             }
             if (operation) {
                 if ($('#operation option[value="' + operation + '"]').length > 0) {

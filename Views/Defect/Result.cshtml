@@ -1,6 +1,6 @@
 @model List<DefectManagement.Models.SVN_Defect_Record_History>
 @{
-    ViewData["Title"] = "Danh sách Defect Records";
+    ViewData["Title"] = "Lịch sử nhập lỗi";
 }
 
 <!DOCTYPE html>
@@ -14,19 +14,150 @@
     <link href="https://cdn.datatables.net/1.13.4/css/dataTables.bootstrap5.min.css" rel="stylesheet">
 
     <style>
-        .filter-section { background-color: #f8f9fa; border-radius: 10px; border: 1px solid #dee2e6; }
-        .card { border: none; box-shadow: 0 2px 4px rgba(0,0,0,.1); border-radius: 10px; }
-        .table thead th { background-color: #6a9ef8; color: #fff; font-weight: 600; }
-        .table tbody tr:hover { background-color: #f1f3f4; }
-        .image-preview { max-width: 80px; max-height: 80px; border-radius: 5px; cursor: pointer; }
-        .form-control:focus { border-color: #212c66; box-shadow: 0 0 0 .2rem rgba(73,80,87,.25); }
-        .btn-primary { background-color: #6a9ef8; border-color: #6a9ef8; }
-        .btn-primary:hover { background-color: #4b6fac; border-color: #4b6fac; }
-        .btn-secondary { background-color: #f87080; border-color: #f87080; }
-        .btn-secondary:hover { background-color: #ff3b45; border-color: #ff3b45; }
-        .text-null { color: #4b6fac; font-style: #4b6fac; }
+        /* ===== DESIGN SYSTEM ===== */
+        :root {
+            --brand: #dc2626;
+            --brand-dark: #991b1b;
+            --ink: #09090b;
+            --ink-2: #3f3f46;
+            --ink-3: #71717a;
+            --surface: #ffffff;
+            --base: #f4f4f5;
+            --border: #e4e4e7;
+        }
 
+        /* ===== BASE ===== */
+        *, *::before, *::after { box-sizing: border-box; }
+        body {
+            font-family: -apple-system, 'Segoe UI', system-ui, sans-serif;
+            -webkit-font-smoothing: antialiased;
+            background-color: var(--base);
+            font-size: 14px;
+            color: var(--ink);
+        }
 
+        /* ===== PAGE TITLE ===== */
+        .page-title-bar {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: .9rem 1.2rem .9rem 1.75rem;
+            margin-bottom: 1.25rem;
+            box-shadow: 0 1px 2px rgba(0,0,0,.05);
+            position: relative;
+        }
+        .page-title-bar::before {
+            content: '';
+            position: absolute;
+            left: 0; top: 0; bottom: 0;
+            width: 4px;
+            background: var(--brand);
+            border-radius: 12px 0 0 12px;
+        }
+
+        /* ===== FILTER SECTION ===== */
+        .filter-section {
+            background: var(--surface);
+            border: 1px solid var(--border) !important;
+            border-radius: 12px !important;
+            box-shadow: 0 1px 2px rgba(0,0,0,.05);
+        }
+
+        /* ===== CARD ===== */
+        .card {
+            border: 1px solid var(--border) !important;
+            box-shadow: 0 1px 2px rgba(0,0,0,.05) !important;
+            border-radius: 12px !important;
+        }
+        .card-header {
+            background: var(--surface) !important;
+            border-bottom: 1px solid var(--border) !important;
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--ink);
+        }
+
+        /* ===== TABLE ===== */
+        .table thead th {
+            background: var(--ink) !important;
+            color: #fff !important;
+            font-size: 11px !important;
+            font-weight: 700 !important;
+            text-transform: uppercase;
+            letter-spacing: .5px;
+            border-color: #1c1c1e !important;
+        }
+        .table tbody tr:hover { background-color: rgba(220,38,38,.06) !important; }
+        .table td { font-size: 12px; color: var(--ink); border-color: var(--border); vertical-align: middle; }
+        .table-striped tbody tr:nth-of-type(odd) { background-color: #fafafa; }
+
+        /* ===== IMAGE PREVIEW ===== */
+        .image-preview {
+            max-width: 80px;
+            max-height: 80px;
+            border-radius: 6px;
+            cursor: pointer;
+            border: 1px solid var(--border);
+            transition: transform .15s;
+        }
+        .image-preview:hover { transform: scale(1.15); }
+
+        /* ===== FORM CONTROLS ===== */
+        .form-control:focus, .form-select:focus {
+            border-color: var(--brand);
+            box-shadow: 0 0 0 .2rem rgba(220,38,38,.1);
+        }
+        .form-label {
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: .5px;
+            color: var(--ink-3);
+            margin-bottom: 4px;
+        }
+
+        /* ===== BUTTONS ===== */
+        .btn-primary {
+            background-color: var(--brand) !important;
+            border-color: var(--brand) !important;
+            font-size: 12px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: .5px;
+        }
+        .btn-primary:hover {
+            background-color: var(--brand-dark) !important;
+            border-color: var(--brand-dark) !important;
+        }
+        .btn-secondary {
+            background-color: var(--ink-2) !important;
+            border-color: var(--ink-2) !important;
+            font-size: 12px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: .5px;
+        }
+        .btn-secondary:hover {
+            background-color: var(--ink) !important;
+            border-color: var(--ink) !important;
+        }
+        .btn-success {
+            background-color: #16a34a !important;
+            border-color: #16a34a !important;
+            font-size: 12px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: .5px;
+        }
+        .btn-success:hover {
+            background-color: #15803d !important;
+            border-color: #15803d !important;
+        }
+
+        /* ===== NULL DISPLAY ===== */
+        .text-null { color: var(--ink-3); font-style: italic; font-size: 11px; }
+
+        /* ===== PAGINATION ===== */
         .pagination-container {
             display: flex;
             justify-content: space-between;
@@ -35,121 +166,124 @@
             flex-wrap: wrap;
             gap: 10px;
         }
-        
+
         .pagination-info {
-            font-size: 13px;
-            color: #6c757d;
+            font-size: 12px;
+            color: var(--ink-3);
         }
-        
+
         .custom-pagination .page-link {
-            color: #6a9ef8;
-            border-color: #dee2e6;
-            padding: 6px 10px; 
-            font-size: 13px; 
-            min-width: 32px; 
-            height: 32px; 
+            color: var(--ink-2);
+            border-color: var(--border);
+            padding: 6px 10px;
+            font-size: 12px;
+            min-width: 32px;
+            height: 32px;
             display: flex;
             align-items: center;
             justify-content: center;
-            border-radius: 4px; 
+            border-radius: 6px;
+            transition: color .15s, border-color .15s;
         }
-        
+
         .custom-pagination .page-item.active .page-link {
-            background-color: #6a9ef8;
-            border-color: #6a9ef8;
-            font-weight: 600;
+            background-color: var(--brand);
+            border-color: var(--brand);
+            color: #fff;
+            font-weight: 700;
         }
-        
+
         .custom-pagination .page-link:hover {
-            color: #4b6fac;
-            background-color: #f8f9fa;
-            border-color: #4b6fac;
-        }
-        
-     
-        .custom-pagination .page-link i {
-            font-size: 11px; 
-        }
-        
-      
-        .custom-pagination .page-item {
-            margin: 0 1px; 
-        }
-        
-        .page-size-selector {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            font-size: 13px;
-        }
-        
-        .page-size-selector select {
-            width: auto;
-            min-width: 60px;
-            padding: 4px 8px;
-            font-size: 13px;
-            height: 32px; 
+            color: var(--brand);
+            background-color: #fff5f5;
+            border-color: var(--brand);
         }
 
+        .custom-pagination .page-link i { font-size: 11px; }
+        .custom-pagination .page-item { margin: 0 1px; }
+
+        /* ===== DATATABLES OVERRIDES ===== */
+        .dataTables_wrapper .dataTables_filter input:focus,
+        .dataTables_wrapper .dataTables_length select:focus {
+            border-color: var(--brand);
+            box-shadow: 0 0 0 .2rem rgba(220,38,38,.1);
+            outline: none;
+        }
+        .dataTables_paginate .paginate_button.current,
+        .dataTables_paginate .paginate_button.current:hover {
+            background: var(--brand) !important;
+            border-color: var(--brand) !important;
+            color: #fff !important;
+        }
+        .dataTables_paginate .paginate_button:hover {
+            background: #fff5f5 !important;
+            border-color: var(--brand) !important;
+            color: var(--brand) !important;
+        }
+
+        /* ===== MODAL ===== */
+        .modal-header {
+            border-bottom: 1px solid var(--border);
+        }
+
+        /* ===== DATATABLES SORT ICONS ON BLACK HEADER ===== */
+        table.dataTable thead th::before,
+        table.dataTable thead th::after {
+            color: rgba(255,255,255,.5) !important;
+        }
+        table.dataTable thead th.sorting_asc::before,
+        table.dataTable thead th.sorting_desc::after {
+            color: #fff !important;
+            opacity: 1 !important;
+        }
+
+        /* ===== RESPONSIVE ===== */
         @@media (max-width: 768px) {
-
-
-        a[style*="margin-left: 9px"] {
-            margin-left: 0 !important;
-            margin-top: 0 !important;
-        }
-
-        .row.mt-3 .col-12 
-        {
-        display: flex;
-        flex-wrap: nowrap;
-        gap: 8px;
-        justify-content: flex-start;
-        align-items: center;
-        }
-
-        .row.mt-3 .col-12 .btn {
-        flex: 1;
-        min-width: 100px;
-        margin: 0;
-        text-align: center;
-        font-size: 13px;
-        padding: 6px 8px;
-        }
-
-       .pagination-container {
+            a[style*="margin-left: 9px"] {
+                margin-left: 0 !important;
+                margin-top: 0 !important;
+            }
+            .row.mt-3 .col-12 {
+                display: flex;
+                flex-wrap: nowrap;
+                gap: 8px;
+                justify-content: flex-start;
+                align-items: center;
+            }
+            .row.mt-3 .col-12 .btn {
+                flex: 1;
+                min-width: 80px;
+                margin: 0;
+                font-size: 11px;
+                padding: 6px 8px;
+            }
+            .pagination-container {
                 flex-direction: column;
                 align-items: stretch;
                 text-align: center;
-                gap: 15px;
+                gap: 12px;
             }
-            
             .custom-pagination {
                 justify-content: center;
                 flex-wrap: wrap;
             }
-            
             .custom-pagination .page-link {
                 padding: 5px 8px;
-                font-size: 12px;
+                font-size: 11px;
                 min-width: 28px;
                 height: 28px;
             }
-            
-            .page-size-selector {
-                justify-content: center;
-            }
-            
-            .pagination-info {
-                font-size: 12px;
-            }
-         
-    }
+            .pagination-info { font-size: 11px; }
+        }
     </style>
 </head>
 
 <body>
 <div class="container-fluid mt-4">
+    <!-- Page Header -->
+    <div class="page-title-bar mb-4">
+        <h5 style="margin:0; font-weight:800; letter-spacing:-.3px; color:#09090b; font-size:1.1rem;">Lịch sử nhập lỗi</h5>
+    </div>
     <!-- Bộ lọc tìm kiếm -->
     <div class="row mb-4">
         <div class="col-12">

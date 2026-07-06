@@ -42,62 +42,100 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
     <style>
+        /* ===== DESIGN SYSTEM ===== */
+        :root {
+            --brand: #dc2626;
+            --brand-dark: #991b1b;
+            --ink: #09090b;
+            --ink-2: #3f3f46;
+            --ink-3: #71717a;
+            --surface: #ffffff;
+            --base: #f4f4f5;
+            --border: #e4e4e7;
+        }
+
         /* ===== BASE ===== */
         *, *::before, *::after { box-sizing: border-box; }
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #f0f4f8;
+            font-family: -apple-system, 'Segoe UI', system-ui, sans-serif;
+            -webkit-font-smoothing: antialiased;
+            background-color: var(--base);
             font-size: 14px;
+            color: var(--ink);
             overflow-x: hidden;
         }
 
-        /* ===== PAGE HEADER – BLUE ===== */
+        /* ===== PAGE HEADER ===== */
         .page-header {
-            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 60%, #3b82f6 100%);
-            color: #fff;
-            padding: 1.2rem 1.5rem;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            color: var(--ink);
+            padding: 1rem 1.5rem 1rem 1.75rem;
             border-radius: 12px;
-            margin-bottom: 1.4rem;
-            box-shadow: 0 4px 18px rgba(42,82,152,.4);
+            margin-bottom: 1.25rem;
+            box-shadow: 0 1px 2px rgba(0,0,0,.05);
+            position: relative;
+        }
+        .page-header::before {
+            content: '';
+            position: absolute;
+            left: 0; top: 0; bottom: 0;
+            width: 4px;
+            background: var(--brand);
+            border-radius: 12px 0 0 12px;
         }
         .page-header h1 {
-            font-size: clamp(1rem, 3.5vw, 1.6rem);
+            font-size: clamp(.95rem, 3.5vw, 1.35rem);
             margin: 0;
-            font-weight: 700;
-            letter-spacing: .3px;
+            font-weight: 800;
+            letter-spacing: -.5px;
+            color: var(--ink);
         }
 
         /* ===== CARD BOX ===== */
         .card-box {
-            background: #fff;
+            background: var(--surface);
+            border: 1px solid var(--border);
             border-radius: 12px;
-            box-shadow: 0 2px 8px rgba(0,0,0,.07);
+            box-shadow: 0 1px 2px rgba(0,0,0,.05);
             padding: 1rem 1.2rem;
             margin-bottom: 1.25rem;
         }
 
         /* ===== KPI CARDS ===== */
         .stats-card {
-            background: #fff;
+            background: var(--surface);
+            border: 1px solid var(--border);
             border-radius: 12px;
-            box-shadow: 0 2px 8px rgba(0,0,0,.07);
+            box-shadow: 0 1px 2px rgba(0,0,0,.05);
             padding: 1rem 1.2rem;
             margin-bottom: 1rem;
-            transition: transform .2s, box-shadow .2s;
             border-left: 4px solid transparent;
+            transition: box-shadow .15s;
         }
-        .stats-card:hover { transform: translateY(-3px); box-shadow: 0 6px 18px rgba(0,0,0,.13); }
-        .stats-card.kpi-blue    { border-left-color: #2a5298; }
-        .stats-card.kpi-danger  { border-left-color: #e53e3e; }
-        .stats-card.kpi-warning { border-left-color: #d69e2e; }
-        .stats-card h5 { font-size: .8rem; color: #718096; margin-bottom: 4px; font-weight: 600; text-transform: uppercase; letter-spacing: .5px; }
-        .stats-card h2 { font-size: clamp(1.5rem, 4vw, 2.1rem); margin: 0; font-weight: 700; }
+        .stats-card:hover { box-shadow: 0 4px 12px rgba(0,0,0,.08); }
+        .stats-card.kpi-blue    { border-left-color: var(--ink-2); }
+        .stats-card.kpi-danger  { border-left-color: var(--brand); }
+        .stats-card.kpi-warning { border-left-color: #d97706; }
+        .stats-card h5 {
+            font-size: 11px;
+            color: var(--ink-3);
+            margin-bottom: 6px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: .6px;
+        }
+        .stats-card h2 { font-size: 28px; margin: 0; font-weight: 800; letter-spacing: -.5px; }
+        .stats-card.kpi-blue    h2 { color: var(--ink-2); }
+        .stats-card.kpi-danger  h2 { color: var(--brand); }
+        .stats-card.kpi-warning h2 { color: #d97706; }
 
         /* ===== CHART CONTAINERS ===== */
         .chart-box {
-            background: #fff;
+            background: var(--surface);
+            border: 1px solid var(--border);
             border-radius: 12px;
-            box-shadow: 0 2px 8px rgba(0,0,0,.07);
+            box-shadow: 0 1px 2px rgba(0,0,0,.05);
             padding: 1.1rem 1.2rem;
             margin-bottom: 1.25rem;
             height: 370px;
@@ -105,12 +143,21 @@
             flex-direction: column;
         }
         .chart-box canvas { flex: 1; min-height: 0; width: 100% !important; }
-        .chart-box h4 { font-size: .88rem; font-weight: 700; margin-bottom: .5rem; flex-shrink: 0; color: #2d3748; }
+        .chart-box h4 {
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: .6px;
+            color: var(--ink-3);
+            margin-bottom: .6rem;
+            flex-shrink: 0;
+        }
 
         .trend-box {
-            background: #fff;
+            background: var(--surface);
+            border: 1px solid var(--border);
             border-radius: 12px;
-            box-shadow: 0 2px 8px rgba(0,0,0,.07);
+            box-shadow: 0 1px 2px rgba(0,0,0,.05);
             padding: 1.1rem 1.2rem;
             margin-bottom: 1.25rem;
             height: 400px;
@@ -118,43 +165,53 @@
             flex-direction: column;
         }
         .trend-box canvas { flex: 1; min-height: 0; width: 100% !important; }
-        .trend-box h4 { font-size: .88rem; font-weight: 700; margin-bottom: .5rem; flex-shrink: 0; color: #2d3748; }
+        .trend-box h4 {
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: .6px;
+            color: var(--ink-3);
+            margin-bottom: .6rem;
+            flex-shrink: 0;
+        }
 
         /* ===== TABLE ===== */
         .table-defect thead th {
-            background: #2a5298;
+            background: var(--ink);
             color: #fff;
-            font-size: 12px;
-            font-weight: 600;
+            font-size: 11px;
+            font-weight: 700;
             vertical-align: middle;
             white-space: nowrap;
-            border-color: #3b65b8;
+            border-color: #1c1c1e;
+            text-transform: uppercase;
+            letter-spacing: .5px;
         }
-        .table-defect td { vertical-align: middle; font-size: 12px; border-color: #e8ecf4; }
-        .table-defect tbody tr { cursor: pointer; transition: background .12s; }
-        .table-defect tbody tr:hover { background-color: #eef3ff !important; }
-        .table-defect tbody tr:nth-child(even) { background-color: #f8faff; }
+        .table-defect td { vertical-align: middle; font-size: 12px; border-color: var(--border); color: var(--ink); }
+        .table-defect tbody tr { cursor: pointer; transition: background .1s; }
+        .table-defect tbody tr:hover { background-color: rgba(220,38,38,.06) !important; }
+        .table-defect tbody tr:nth-child(even) { background-color: #fafafa; }
 
         /* ===== BADGE OPERATION ===== */
         .badge-op {
-            background: #2a5298;
+            background: var(--ink-2);
             color: #fff;
             padding: 2px 9px;
             border-radius: 20px;
             font-size: 10px;
             white-space: nowrap;
-            font-weight: 600;
+            font-weight: 700;
         }
 
         /* ===== BADGE DEFECT CODE ===== */
         .badge-dc {
-            background: #fef3c7;
-            color: #92400e;
+            background: #fff7ed;
+            color: #9a3412;
             padding: 2px 8px;
             border-radius: 6px;
             font-size: 11px;
             font-weight: 700;
-            border: 1px solid #f59e0b;
+            border: 1px solid #fed7aa;
         }
 
         /* ===== IMAGE THUMB ===== */
@@ -163,50 +220,55 @@
             object-fit: cover;
             border-radius: 6px;
             cursor: pointer;
-            transition: transform .2s;
-            border: 2px solid #cbd5e0;
+            transition: transform .15s;
+            border: 1px solid var(--border);
         }
-        .img-thumb:hover { transform: scale(1.22); }
+        .img-thumb:hover { transform: scale(1.18); }
 
         /* ===== EXPORT BTN ===== */
         .btn-export {
-            background: linear-gradient(135deg, #059669 0%, #34d399 100%);
+            background: #16a34a;
             color: #fff !important;
             border: none;
             padding: .45rem 1.3rem;
             border-radius: 8px;
-            font-weight: 600;
-            font-size: 13px;
+            font-weight: 700;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: .5px;
             text-decoration: none;
             display: inline-flex;
             align-items: center;
             gap: 6px;
-            transition: transform .15s, box-shadow .15s;
-            box-shadow: 0 2px 6px rgba(5,150,105,.3);
+            transition: background .15s;
         }
-        .btn-export:hover { transform: translateY(-2px); box-shadow: 0 5px 14px rgba(5,150,105,.4); }
+        .btn-export:hover { background: #15803d; }
 
         /* ===== FILTER BUTTONS ===== */
         .btn-filter-apply {
-            background: linear-gradient(135deg, #1e3c72 0%, #3b82f6 100%);
+            background: var(--brand);
             color: #fff;
             border: none;
             padding: .42rem 1.2rem;
             border-radius: 8px;
-            font-weight: 600;
-            font-size: 13px;
+            font-weight: 700;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: .5px;
             cursor: pointer;
-            transition: transform .15s, box-shadow .15s;
+            transition: background .15s;
         }
-        .btn-filter-apply:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(30,60,114,.35); }
+        .btn-filter-apply:hover { background: var(--brand-dark); }
         .btn-filter-clear {
-            background: #fff;
-            color: #4a5568;
-            border: 1.5px solid #cbd5e0;
+            background: var(--surface);
+            color: var(--ink-2);
+            border: 1px solid var(--border);
             padding: .42rem 1.2rem;
             border-radius: 8px;
-            font-weight: 600;
-            font-size: 13px;
+            font-weight: 700;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: .5px;
             cursor: pointer;
             text-decoration: none;
             display: inline-flex;
@@ -214,35 +276,40 @@
             gap: 5px;
             transition: border-color .15s, color .15s;
         }
-        .btn-filter-clear:hover { border-color: #e53e3e; color: #e53e3e; }
+        .btn-filter-clear:hover { border-color: var(--brand); color: var(--brand); }
 
         /* ===== SORT ===== */
         .sortable { cursor: pointer; user-select: none; }
-        .sortable:hover { background-color: #3b65b8 !important; }
-        .sort-icon { font-size: 9px; margin-left: 3px; opacity: .8; }
+        .sortable:hover { background-color: #1c1c1e !important; }
+        .sort-icon { font-size: 9px; margin-left: 3px; opacity: .7; }
 
         /* ===== PAGINATION ===== */
-        .page-link { font-size: 13px; color: #2a5298; }
-        .page-item.active .page-link { background-color: #2a5298; border-color: #2a5298; }
+        .page-link { font-size: 13px; color: var(--ink-2); }
+        .page-link:hover { color: var(--brand); }
+        .page-item.active .page-link { background-color: var(--brand); border-color: var(--brand); color: #fff; }
 
         /* ===== DETAIL MODAL ===== */
         .detail-section-title {
-            font-size: 12.5px; font-weight: 700; color: #2a5298;
-            border-bottom: 2px solid #2a5298;
-            padding-bottom: 4px; margin-bottom: 10px;
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--ink-3);
+            text-transform: uppercase;
+            letter-spacing: .6px;
+            border-bottom: 2px solid var(--brand);
+            padding-bottom: 4px;
+            margin-bottom: 10px;
         }
-        .history-tbl th { font-size: 11px; background-color: #ebf0fb !important; color: #2d3748; }
+        .history-tbl th { font-size: 11px; background-color: var(--base) !important; color: var(--ink-2); text-transform: uppercase; letter-spacing: .4px; }
         .history-tbl td { font-size: 11px; }
         .modal-img-full { width: 100%; max-height: 460px; object-fit: contain; }
-        .modal-header-blue { background: linear-gradient(135deg,#1e3c72,#2a5298); color:#fff; }
+        .modal-header-blue { background: var(--ink); color: #fff; }
 
-        /* ===== FILTER CARD – overflow visible để dropdown không bị cắt ===== */
+        /* ===== FILTER CARD ===== */
         .filter-card {
             overflow: visible !important;
             position: relative;
             z-index: 200;
         }
-        /* Đảm bảo tất cả row/col bên trong cũng không cắt overflow */
         .filter-card .row,
         .filter-card .col-6,
         .filter-card .col-sm-4,
@@ -251,26 +318,52 @@
             overflow: visible !important;
         }
 
+        /* ===== FORM CONTROLS ===== */
+        .form-control:focus, .form-select:focus {
+            border-color: var(--brand);
+            box-shadow: 0 0 0 .2rem rgba(220,38,38,.1);
+        }
+        .form-label {
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: .5px;
+            color: var(--ink-3);
+            margin-bottom: 4px;
+        }
+
         /* ===== TOM-SELECT custom ===== */
         .ts-wrapper { overflow: visible !important; }
         .ts-control {
             border-radius: 6px !important;
-            border-color: #cbd5e0 !important;
+            border-color: var(--border) !important;
             font-size: 13px !important;
             min-height: 31px !important;
             padding: 3px 8px !important;
         }
+        .ts-control:focus-within {
+            border-color: var(--brand) !important;
+            box-shadow: 0 0 0 3px rgba(220,38,38,.1) !important;
+        }
         .ts-dropdown {
             font-size: 13px;
             z-index: 99999 !important;
-            box-shadow: 0 8px 24px rgba(0,0,0,.15) !important;
-            border: 1px solid #cbd5e0 !important;
+            box-shadow: 0 8px 24px rgba(0,0,0,.12) !important;
+            border: 1px solid var(--border) !important;
             border-radius: 8px !important;
             max-height: 260px;
             overflow-y: auto;
         }
         .ts-dropdown .option { padding: 6px 12px; }
-        .ts-dropdown .option:hover, .ts-dropdown .option.active { background: #ebf0fb !important; color: #2a5298 !important; }
+        .ts-dropdown .option:hover, .ts-dropdown .option.active {
+            background: #fff5f5 !important;
+            color: var(--brand) !important;
+        }
+
+        /* ===== MISC ===== */
+        .text-danger { color: var(--brand) !important; }
+        .spinner-border { color: var(--brand) !important; }
+        .badge.bg-secondary { background: var(--ink-2) !important; }
 
         /* ===== ANIMATIONS ===== */
         @@keyframes fadeUp { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
@@ -302,7 +395,7 @@
 
     <!-- ===== HEADER ===== -->
     <div class="page-header fade-up">
-        <h1></i>Báo Cáo Defect</h1>
+        <h1>Báo Cáo Defect</h1>
     </div>
 
     <!-- ===== ERROR ===== -->
@@ -322,7 +415,7 @@
                 <!-- Từ ngày -->
                 <div class="col-6 col-sm-4 col-md-3 col-lg-2">
                     <label class="form-label fw-bold small mb-1">
-                        <i class="fas fa-calendar-alt" style="color:#2a5298"></i> Từ ngày
+                        <i class="fas fa-calendar-alt" style="color:#dc2626"></i> Từ ngày
                     </label>
                     <input type="date" class="form-control form-control-sm" name="fromDate" value="@fromDate" />
                 </div>
@@ -330,7 +423,7 @@
                 <!-- Đến ngày -->
                 <div class="col-6 col-sm-4 col-md-3 col-lg-2">
                     <label class="form-label fw-bold small mb-1">
-                        <i class="fas fa-calendar-alt" style="color:#2a5298"></i> Đến ngày
+                        <i class="fas fa-calendar-alt" style="color:#dc2626"></i> Đến ngày
                     </label>
                     <input type="date" class="form-control form-control-sm" name="toDate" value="@toDate" />
                 </div>
@@ -380,7 +473,7 @@
                 <!-- Defect Code – searchable select -->
                 <div class="col-6 col-sm-4 col-md-3 col-lg-2">
                     <label class="form-label fw-bold small mb-1">
-                        <i class="fas fa-exclamation-circle" style="color:#d69e2e"></i> Defect Code
+                        <i class="fas fa-exclamation-circle" style="color:#d97706"></i> Defect Code
                     </label>
                     <select id="selDefectCode" name="defectCode" class="form-select form-select-sm" autocomplete="off">
                         <option value="">-- Tất cả --</option>
@@ -440,8 +533,8 @@
         <div class="row g-3 mb-1 fade-up-3">
             <div class="col-12 col-sm-4">
                 <div class="stats-card kpi-blue">
-                    <h5><i class="fas fa-cogs me-1" style="color:#2a5298"></i>Tổng số Operation</h5>
-                    <h2 style="color:#2a5298">@ViewBag.TotalOperations</h2>
+                    <h5><i class="fas fa-cogs me-1" style="color:#3f3f46"></i>Tổng số Operation</h5>
+                    <h2>@ViewBag.TotalOperations</h2>
                 </div>
             </div>
             <div class="col-12 col-sm-4">
@@ -452,8 +545,8 @@
             </div>
             <div class="col-12 col-sm-4">
                 <div class="stats-card kpi-warning">
-                    <h5><i class="fas fa-times-circle me-1" style="color:#d69e2e"></i>Tổng số lượng NG</h5>
-                    <h2 style="color:#d69e2e">@ViewBag.TotalQtyNG</h2>
+                    <h5><i class="fas fa-times-circle me-1" style="color:#d97706"></i>Tổng số lượng NG</h5>
+                    <h2 style="color:#d97706">@ViewBag.TotalQtyNG</h2>
                 </div>
             </div>
         </div>
@@ -478,7 +571,7 @@
         <div class="row g-3">
             <div class="col-12 col-md-6 col-xl-4">
                 <div class="chart-box">
-                    <h4><i class="fas fa-chart-bar me-1" style="color:#2a5298"></i>Biểu đồ Defect theo operation</h4>
+                    <h4><i class="fas fa-chart-bar me-1" style="color:#dc2626"></i>Biểu đồ Defect theo operation</h4>
                     <canvas id="operationChart"></canvas>
                 </div>
             </div>
@@ -512,9 +605,9 @@
         <!-- ===== DETAIL TABLE ===== -->
         <div class="card-box">
             <div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
-                <h5 class="mb-0" style="color:#2d3748">
-                    <i class="fas fa-table me-1" style="color:#2a5298"></i> Chi tiết Defect Records
-                    <span class="badge ms-1" style="background:#2a5298">@totalRecords bản ghi</span>
+                <h5 class="mb-0" style="color:#09090b">
+                    <i class="fas fa-table me-1" style="color:#dc2626"></i> Chi tiết Defect Records
+                    <span class="badge ms-1" style="background:#09090b">@totalRecords bản ghi</span>
                 </h5>
                 <span class="text-muted small">Trang @currentPage / @totalPages</span>
             </div>
@@ -545,7 +638,7 @@
                             <tr onclick="showDetail(@item.Id)" data-id="@item.Id">
                                 <td class="text-center text-muted small">@stt</td>
                                 <td class="text-nowrap">
-                                    <small class="fw-semibold" style="color:#2d3748">@item.Work_order</small>
+                                    <small class="fw-semibold" style="color:#09090b">@item.Work_order</small>
                                 </td>
                                 <td class="col-sm-hide">
                                     <small class="text-muted">@item.Item_code</small>
@@ -553,13 +646,13 @@
                                 <td>
                                     <span class="badge-dc">@item.Defect_Code</span>
                                 </td>
-                                <td style="color:#2d3748">@item.Defect_Name</td>
-                                <td class="text-center fw-bold" style="color:#e53e3e; font-size:13px">@item.Qty_NG</td>
+                                <td style="color:#09090b">@item.Defect_Name</td>
+                                <td class="text-center fw-bold" style="color:#dc2626; font-size:13px">@item.Qty_NG</td>
                                 <td>
                                     <span class="badge-op">@item.Operation</span>
                                 </td>
                                 <td class="col-sm-hide">
-                                    <small class="d-block fw-semibold" style="color:#4a5568">@item.Employer_code</small>
+                                    <small class="d-block fw-semibold" style="color:#3f3f46">@item.Employer_code</small>
                                     <small class="text-muted">@item.Employer_name</small>
                                 </td>
                                 <td class="col-sm-hide">
@@ -583,7 +676,7 @@
                                     }
                                 </td>
                                 <td class="text-nowrap">
-                                    <small class="d-block" style="color:#4a5568">@item.Time_line?.ToString("dd/MM/yyyy")</small>
+                                    <small class="d-block" style="color:#3f3f46">@item.Time_line?.ToString("dd/MM/yyyy")</small>
                                     <small class="text-muted">@item.Time_line?.ToString("HH:mm:ss")</small>
                                 </td>
                             </tr>
@@ -662,7 +755,7 @@
             </div>
             <div class="modal-body p-3" id="detailModalBody">
                 <div class="text-center py-5">
-                    <div class="spinner-border" style="color:#2a5298"></div>
+                    <div class="spinner-border" style="color:#dc2626"></div>
                 </div>
             </div>
         </div>
@@ -761,7 +854,7 @@ function showDetail(id) {
     const modalEl = document.getElementById('detailModal');
     const modal   = bootstrap.Modal.getOrCreateInstance(modalEl);
     document.getElementById('detailModalBody').innerHTML =
-        '<div class="text-center py-5"><div class="spinner-border" style="color:#2a5298"></div></div>';
+        '<div class="text-center py-5"><div class="spinner-border" style="color:#dc2626"></div></div>';
     modal.show();
 
     fetch(`/Defect/GetDefectDetail?id=${id}`)

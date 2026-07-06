@@ -8,6 +8,53 @@
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/DefectManagement.styles.css" asp-append-version="true" />
+    <style>
+        :root {
+            --brand: #dc2626;
+            --brand-dark: #991b1b;
+            --ink: #09090b;
+            --ink-2: #3f3f46;
+            --ink-3: #71717a;
+            --surface: #ffffff;
+            --base: #f4f4f5;
+            --border: #e4e4e7;
+        }
+        *, *::before, *::after { box-sizing: border-box; }
+        body {
+            font-family: -apple-system, 'Segoe UI', system-ui, sans-serif;
+            -webkit-font-smoothing: antialiased;
+            background-color: var(--base);
+            color: var(--ink);
+        }
+        .navbar {
+            background: var(--surface) !important;
+            border-bottom: 1px solid var(--border) !important;
+            box-shadow: none !important;
+            padding-top: .6rem;
+            padding-bottom: .6rem;
+        }
+        .navbar .nav-link,
+        .navbar .nav-link.text-dark {
+            color: var(--ink-2) !important;
+            font-size: 13px;
+            font-weight: 600;
+            transition: color .15s;
+        }
+        .navbar .nav-link:hover,
+        .navbar .custom-highlight:hover {
+            color: var(--brand) !important;
+        }
+        .navbar-brand {
+            color: var(--ink) !important;
+            font-weight: 800;
+            letter-spacing: -.3px;
+            font-size: 15px;
+        }
+        .footer {
+            border-top: 1px solid var(--border) !important;
+            background: var(--surface);
+        }
+    </style>
 </head>
 
 <body>
@@ -24,7 +71,7 @@
                         <li class="nav-item">
                             <a class="nav-link text-dark custom-highlight" asp-area="" asp-controller="Defect"
                                 asp-action="Create">Nhập
-                                Defect</a>
+                                lỗi Defect</a>
                         </li>
                         <li class="nav-item">
                             <a class="nav-link text-dark custom-highlight" asp-area="" asp-controller="Defect"
