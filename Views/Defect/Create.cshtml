@@ -270,11 +270,22 @@
 
         //============ ODOO Function ========
 
+        // Tự động thêm tiền tố "NM/MO/" nếu người dùng chỉ gõ/paste phần số
+        function normalizeWorkOrder(value) {
+            if (!value) return value;
+            let v = value.trim();
+            if (/^NM\/MO\//i.test(v)) {
+                return v.toUpperCase();
+            }
+            return "NM/MO/" + v;
+        }
+
         $(document).ready(function () {
 
             // Gọi Odoo API khi blur khỏi Work Order
             $('#WorkOrder').on('blur', function () {
-                const workOrder = $(this).val();
+                const workOrder = normalizeWorkOrder($(this).val());
+                $(this).val(workOrder);
                 const productionCodeDisplay = $("#productionCodeDisplay");
 
 
@@ -282,7 +293,7 @@
                 if (workOrder && workOrder.length < 11) {
                     currentProductCode = "";
                     productionCodeDisplay.text("");
-                    showToast("Bạn phải nhập Work Order ít nhất 11 ký tự!", 'error', 2000);
+                    showToast("Work Order chưa đủ số ký tự (dạng NM/MO/xxxxx)!", 'error', 2000);
                     return;
                 }
 
@@ -529,7 +540,9 @@
 
             // Validate form trước khi gửi
             const employerCode = document.getElementById("Employer_code").value;
-            const workOrder = document.getElementById("WorkOrder").value;
+            const workOrderInput = document.getElementById("WorkOrder");
+            const workOrder = normalizeWorkOrder(workOrderInput.value);
+            workOrderInput.value = workOrder;
             const operation = document.getElementById("operation").value;
             const defectCode = document.getElementById("code").value;
             const defectName = document.getElementById("name").value;

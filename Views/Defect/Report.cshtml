@@ -214,6 +214,20 @@
             border: 1px solid #fed7aa;
         }
 
+        /* ===== SHIFT BADGE ===== */
+        .badge-shift {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 999px;
+            font-size: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: .3px;
+        }
+        .badge-shift-day { background: #fef3c7; color: #92400e; }
+        .badge-shift-night { background: #e0e7ff; color: #3730a3; }
+        .workdate-note-icon { color: var(--ink-3, #71717a); cursor: help; margin-left: 4px; font-size: 11px; }
+
         /* ===== IMAGE THUMB ===== */
         .img-thumb {
             width: 44px; height: 44px;
@@ -414,16 +428,16 @@
 
                 <!-- Từ ngày -->
                 <div class="col-6 col-sm-4 col-md-3 col-lg-2">
-                    <label class="form-label fw-bold small mb-1">
-                        <i class="fas fa-calendar-alt" style="color:#dc2626"></i> Từ ngày
+                    <label class="form-label fw-bold small mb-1" title="Lọc theo ngày làm việc — ca đêm được tính vào ngày làm việc hôm trước">
+                        <i class="fas fa-calendar-alt" style="color:#dc2626"></i> Từ ngày (làm việc)
                     </label>
                     <input type="date" class="form-control form-control-sm" name="fromDate" value="@fromDate" />
                 </div>
 
                 <!-- Đến ngày -->
                 <div class="col-6 col-sm-4 col-md-3 col-lg-2">
-                    <label class="form-label fw-bold small mb-1">
-                        <i class="fas fa-calendar-alt" style="color:#dc2626"></i> Đến ngày
+                    <label class="form-label fw-bold small mb-1" title="Lọc theo ngày làm việc — ca đêm được tính vào ngày làm việc hôm trước">
+                        <i class="fas fa-calendar-alt" style="color:#dc2626"></i> Đến ngày (làm việc)
                     </label>
                     <input type="date" class="form-control form-control-sm" name="toDate" value="@toDate" />
                 </div>
@@ -626,7 +640,9 @@
                             <th class="col-sm-hide">Employer</th>
                             <th class="col-sm-hide">Note</th>
                             <th class="text-center" style="width:58px">Image</th>
-                            <th class="sortable" onclick="sortTable(10,this)">Time Line<span class="sort-icon">⇅</span></th>
+                            <th class="sortable" onclick="sortTable(10,this)">Ngày làm việc<span class="sort-icon">⇅</span></th>
+                            <th class="text-center" style="width:60px">Ca</th>
+                            <th class="sortable" onclick="sortTable(12,this)">Time Line<span class="sort-icon">⇅</span></th>
                         </tr>
                     </thead>
                     <tbody>
@@ -673,6 +689,25 @@
                                     else
                                     {
                                         <span class="text-muted">—</span>
+                                    }
+                                </td>
+                                <td class="text-nowrap">
+                                    @if (item.Work_Date.HasValue)
+                                    {
+                                        <small class="d-block fw-semibold" style="color:#09090b">@item.Work_Date.Value.ToString("dd/MM/yyyy")</small>
+                                        if (item.Time_line.HasValue && item.Time_line.Value.Date != item.Work_Date.Value.Date)
+                                        {
+                                            <i class="fas fa-circle-info workdate-note-icon"
+                                               title="Ghi nhận lúc @item.Time_line.Value.ToString("HH:mm") ngày @item.Time_line.Value.ToString("dd/MM") — tính vào ca @(item.Shift == "Night" ? "Đêm" : "Ngày") của ngày làm việc @item.Work_Date.Value.ToString("dd/MM/yyyy")"></i>
+                                        }
+                                    }
+                                </td>
+                                <td class="text-center">
+                                    @if (!string.IsNullOrEmpty(item.Shift))
+                                    {
+                                        <span class="badge-shift @(item.Shift == "Night" ? "badge-shift-night" : "badge-shift-day")">
+                                            @(item.Shift == "Night" ? "Đêm" : "Ngày")
+                                        </span>
                                     }
                                 </td>
                                 <td class="text-nowrap">

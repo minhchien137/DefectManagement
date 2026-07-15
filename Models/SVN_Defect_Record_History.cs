@@ -32,7 +32,12 @@ namespace DefectManagement.Models
 
         public DateTime? Time_line { get; set; }
 
+        // Cột computed persisted trong DB, tự suy ra từ Time_line — không insert/update qua EF
+        [DatabaseGenerated(DatabaseGeneratedOption.Computed)]
+        public DateTime? Work_Date { get; set; }
 
+        [DatabaseGenerated(DatabaseGeneratedOption.Computed)]
+        public string? Shift { get; set; }
     }
 }
 

@@ -65,9 +65,9 @@ namespace DefectManagement.Controllers
             if (!string.IsNullOrEmpty(operation))
                 query = query.Where(x => x.Operation.Contains(operation));
             if (!string.IsNullOrEmpty(fromInsDateTime) && DateTime.TryParse(fromInsDateTime, out var fromDate))
-                query = query.Where(x => x.INSDatetime.CompareTo(fromDate.ToString("yyyyMMdd")) >= 0);
+                query = query.Where(x => x.Work_Date >= fromDate.Date);
             if (!string.IsNullOrEmpty(toInsDateTime) && DateTime.TryParse(toInsDateTime, out var toDate))
-                query = query.Where(x => x.INSDatetime.CompareTo(toDate.ToString("yyyyMMdd")) <= 0);
+                query = query.Where(x => x.Work_Date <= toDate.Date);
 
             var data = await query.OrderBy(x => x.Time_line).ToListAsync();
 
@@ -82,7 +82,8 @@ namespace DefectManagement.Controllers
                 // ── Header ──
                 string[] headers = { "ID", "Work Order", "Item Code", "Defect Code", "Defect Name",
                               "Qty NG", "INS DateTime", "Operation", "Employer Code",
-                              "Employer Name", "Note", "Image Error", "Time Line" };
+                              "Employer Name", "Note", "Image Error", "Time Line",
+                              "Ngày làm việc", "Ca" };
 
                 for (int i = 0; i < headers.Length; i++)
                 {
@@ -118,6 +119,8 @@ namespace DefectManagement.Controllers
                     ws.Cell(currentRow, 10).Value = item.Employer_name;
                     ws.Cell(currentRow, 11).Value = item.Note;
                     ws.Cell(currentRow, 13).Value = item.Time_line?.ToString("yyyy-MM-dd HH:mm:ss");
+                    ws.Cell(currentRow, 14).Value = item.Work_Date?.ToString("yyyy-MM-dd");
+                    ws.Cell(currentRow, 15).Value = item.Shift;
 
                     // ── Xử lý ảnh ──
                     bool imageEmbedded = false;
@@ -159,6 +162,8 @@ namespace DefectManagement.Controllers
                 ws.Column(6).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
                 ws.Column(7).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
                 ws.Column(13).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
+                ws.Column(14).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
+                ws.Column(15).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
 
                 ws.Column(IMAGE_COL).Width = 14;
                 ws.Columns().AdjustToContents();
@@ -200,14 +205,12 @@ namespace DefectManagement.Controllers
 
                 if (!string.IsNullOrEmpty(fromInsDateTime) && DateTime.TryParse(fromInsDateTime, out var fromDate))
                 {
-                    var formattedDate = fromDate.ToString("yyyyMMdd");
-                    query = query.Where(x => x.INSDatetime.CompareTo(formattedDate) >= 0);
+                    query = query.Where(x => x.Work_Date >= fromDate.Date);
                 }
 
                 if (!string.IsNullOrEmpty(toInsDateTime) && DateTime.TryParse(toInsDateTime, out var toDate))
                 {
-                    var formattedDate = toDate.ToString("yyyyMMdd");
-                    query = query.Where(x => x.INSDatetime.CompareTo(formattedDate) <= 0);
+                    query = query.Where(x => x.Work_Date <= toDate.Date);
                 }
 
                 // Get total count for pagination
@@ -323,26 +326,10 @@ namespace DefectManagement.Controllers
                     imagePath = $"/uploads/defect-images/{fileName}";
                 }
 
-                // ===== Xử lý thời gian ca đêm =====
-                string insDatetime;
-                DateTime timeLine;
-
-                if (IsNightShift)
-                {
-                    // INSDatetime = ngày hôm qua (yyyyMMdd)
-                    var yesterday = DateTime.Now.AddDays(-1);
-                    insDatetime = yesterday.ToString("yyyyMMdd");
-
-                    // Time_line = random trong khoảng 20:00 - 23:59 ngày hôm qua
-                    var rng = new Random();
-                    int randomMinutes = rng.Next(0, 4 * 60); // 0 đến 239 phút (4 tiếng: 20h-23h59)
-                    timeLine = yesterday.Date.AddHours(20).AddMinutes(randomMinutes);
-                }
-                else
-                {
-                    insDatetime = DateTime.Now.ToString("yyyyMMdd");
-                    timeLine = DateTime.Now;
-                }
+                // Time_line luôn là thời điểm nhập thật — SP tự suy ra Work_Date/Shift từ đây,
+                // không cần (và không được) fake giờ nữa. Modal ca đêm ở FE chỉ còn là xác nhận UX.
+                DateTime timeLine = DateTime.Now;
+                string insDatetime = timeLine.ToString("yyyyMMdd");
 
                 // Gọi stored procedure với parameters
                 await _context.Database.ExecuteSqlRawAsync(
@@ -417,14 +404,12 @@ namespace DefectManagement.Controllers
 
                 if (!string.IsNullOrEmpty(fromDate) && DateTime.TryParse(fromDate, out var parsedFrom))
                 {
-                    var formatted = parsedFrom.ToString("yyyyMMdd");
-                    query = query.Where(x => x.INSDatetime.CompareTo(formatted) >= 0);
+                    query = query.Where(x => x.Work_Date >= parsedFrom.Date);
                 }
 
                 if (!string.IsNullOrEmpty(toDate) && DateTime.TryParse(toDate, out var parsedTo))
                 {
-                    var formatted = parsedTo.ToString("yyyyMMdd");
-                    query = query.Where(x => x.INSDatetime.CompareTo(formatted) <= 0);
+                    query = query.Where(x => x.Work_Date <= parsedTo.Date);
                 }
 
                 // ─── 3. Lấy toàn bộ dữ liệu filtered cho KPI và Charts ───
@@ -479,10 +464,10 @@ namespace DefectManagement.Controllers
                 // Chart 3 – Pie: Top 10 Operations (dùng byOperation, gộp ở JS)
                 // Dữ liệu pie sẽ dùng lại opLabels/opQtyNG từ ChartOperationLabels/ChartOperationQtyNG trong JS
 
-                // Chart 4 – Daily trend
+                // Chart 4 – Daily trend (theo ngày làm việc, ca đêm dồn về hôm trước)
                 var dailyTrend = allData
-                    .Where(x => x.Time_line.HasValue)
-                    .GroupBy(x => x.Time_line.Value.Date)
+                    .Where(x => x.Work_Date.HasValue)
+                    .GroupBy(x => x.Work_Date!.Value)
                     .Select(g => new
                     {
                         Date = g.Key.ToString("dd/MM"),
@@ -637,7 +622,9 @@ namespace DefectManagement.Controllers
                         record.Note,
                         record.Image_error,
                         record.INSDatetime,
-                        TimeLine = record.Time_line.HasValue ? record.Time_line.Value.ToString("dd/MM/yyyy HH:mm:ss") : ""
+                        TimeLine = record.Time_line.HasValue ? record.Time_line.Value.ToString("dd/MM/yyyy HH:mm:ss") : "",
+                        WorkDate = record.Work_Date.HasValue ? record.Work_Date.Value.ToString("dd/MM/yyyy") : "",
+                        record.Shift
                     },
                     sameWO,
                     sameDefectInWO
@@ -665,9 +652,9 @@ namespace DefectManagement.Controllers
             if (!string.IsNullOrEmpty(defectCode)) query = query.Where(x => x.Defect_Code == defectCode);
             if (!string.IsNullOrEmpty(itemCode))   query = query.Where(x => x.Item_code == itemCode);
             if (!string.IsNullOrEmpty(fromDate) && DateTime.TryParse(fromDate, out var f))
-                query = query.Where(x => x.INSDatetime.CompareTo(f.ToString("yyyyMMdd")) >= 0);
+                query = query.Where(x => x.Work_Date >= f.Date);
             if (!string.IsNullOrEmpty(toDate) && DateTime.TryParse(toDate, out var t))
-                query = query.Where(x => x.INSDatetime.CompareTo(t.ToString("yyyyMMdd")) <= 0);
+                query = query.Where(x => x.Work_Date <= t.Date);
 
             var data = await query.OrderByDescending(x => x.Time_line).AsNoTracking().ToListAsync();
 
@@ -696,10 +683,10 @@ namespace DefectManagement.Controllers
                 return new { x.Code, x.Name, x.QtyNG, CumPct = Math.Round(cumPct, 1) };
             }).ToList();
 
-            // ─── 5. Daily Trend + Moving Avg 7 ngày ───
+            // ─── 5. Daily Trend + Moving Avg 7 ngày (theo ngày làm việc) ───
             var dailyTrend = data
-                .Where(x => x.Time_line.HasValue)
-                .GroupBy(x => x.Time_line!.Value.Date)
+                .Where(x => x.Work_Date.HasValue)
+                .GroupBy(x => x.Work_Date!.Value)
                 .Select(g => new { Date = g.Key, QtyNG = g.Sum(x => x.Qty_NG ?? 0), Count = g.Count() })
                 .OrderBy(x => x.Date).ToList();
 
@@ -1022,7 +1009,7 @@ namespace DefectManagement.Controllers
 
             // Tiêu đề sheet 2
             ws2.Cell(r2, 1).Value = "CHI TIẾT DEFECT RECORDS";
-            ws2.Range(r2, 1, r2, 10).Merge();
+            ws2.Range(r2, 1, r2, 12).Merge();
             ws2.Cell(r2, 1).Style.Font.Bold      = true;
             ws2.Cell(r2, 1).Style.Font.FontSize  = 14;
             ws2.Cell(r2, 1).Style.Font.FontColor = WHITE;
@@ -1036,7 +1023,7 @@ namespace DefectManagement.Controllers
                                    $"đến {(string.IsNullOrEmpty(toDate) ? "nay" : DateTime.Parse(toDate).ToString("dd/MM/yyyy"))}  |  " +
                                    $"Tổng: {kpiRecords} records  |  Qty NG: {kpiQtyNG}";
             ws2.Cell(r2, 1).Value = filterSummary;
-            ws2.Range(r2, 1, r2, 10).Merge();
+            ws2.Range(r2, 1, r2, 12).Merge();
             ws2.Cell(r2, 1).Style.Font.Italic    = true;
             ws2.Cell(r2, 1).Style.Font.FontColor = GRAY;
             ws2.Cell(r2, 1).Style.Fill.BackgroundColor = XLColor.FromHtml("#f0f4f8");
@@ -1044,7 +1031,7 @@ namespace DefectManagement.Controllers
             r2 += 2;
 
             // Header bảng
-            string[] detailHeaders = { "STT", "Work Order", "Item Code", "Defect Code", "Defect Name", "Qty NG", "Operation", "Employer", "Note", "Time Line" };
+            string[] detailHeaders = { "STT", "Work Order", "Item Code", "Defect Code", "Defect Name", "Qty NG", "Operation", "Employer", "Note", "Time Line", "Ngày làm việc", "Ca" };
             for (int i = 0; i < detailHeaders.Length; i++)
             {
                 var cell = ws2.Cell(r2, i + 1);
@@ -1057,7 +1044,7 @@ namespace DefectManagement.Controllers
                 cell.Style.Alignment.WrapText   = true;
             }
             ws2.Row(r2).Height = 22;
-            SetBorder(ws2.Range(r2, 1, r2, 10));
+            SetBorder(ws2.Range(r2, 1, r2, 12));
             r2++;
 
             int stt = 1;
@@ -1073,6 +1060,8 @@ namespace DefectManagement.Controllers
                 ws2.Cell(r2, 8).Value  = $"{item.Employer_code} – {item.Employer_name}".Trim(' ', '–');
                 ws2.Cell(r2, 9).Value  = item.Note;
                 ws2.Cell(r2, 10).Value = item.Time_line?.ToString("dd/MM/yyyy HH:mm:ss");
+                ws2.Cell(r2, 11).Value = item.Work_Date?.ToString("dd/MM/yyyy");
+                ws2.Cell(r2, 12).Value = item.Shift;
 
                 ws2.Cell(r2, 1).Style.Alignment.Horizontal  = XLAlignmentHorizontalValues.Center;
                 ws2.Cell(r2, 4).Style.Alignment.Horizontal  = XLAlignmentHorizontalValues.Center;
@@ -1080,9 +1069,11 @@ namespace DefectManagement.Controllers
                 ws2.Cell(r2, 6).Style.Font.FontColor         = RED;
                 ws2.Cell(r2, 6).Style.Font.Bold              = true;
                 ws2.Cell(r2, 10).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
+                ws2.Cell(r2, 11).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
+                ws2.Cell(r2, 12).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
 
-                if (stt % 2 == 0) ws2.Range(r2, 1, r2, 10).Style.Fill.BackgroundColor = XLColor.FromHtml("#f8faff");
-                SetBorder(ws2.Range(r2, 1, r2, 10));
+                if (stt % 2 == 0) ws2.Range(r2, 1, r2, 12).Style.Fill.BackgroundColor = XLColor.FromHtml("#f8faff");
+                SetBorder(ws2.Range(r2, 1, r2, 12));
                 r2++;
             }
 
@@ -1097,6 +1088,8 @@ namespace DefectManagement.Controllers
             ws2.Column(8).Width  = 22;
             ws2.Column(9).Width  = 22;
             ws2.Column(10).Width = 20;
+            ws2.Column(11).Width = 16;
+            ws2.Column(12).Width = 10;
 
             // Freeze header
             ws2.SheetView.FreezeRows(r2 - data.Count - 1);
@@ -1134,9 +1127,9 @@ namespace DefectManagement.Controllers
         if (!string.IsNullOrEmpty(defectCode)) query = query.Where(x => x.Defect_Code == defectCode);
         if (!string.IsNullOrEmpty(itemCode))   query = query.Where(x => x.Item_code   == itemCode);
         if (!string.IsNullOrEmpty(fromDate) && DateTime.TryParse(fromDate, out var fd))
-            query = query.Where(x => x.INSDatetime.CompareTo(fd.ToString("yyyyMMdd")) >= 0);
+            query = query.Where(x => x.Work_Date >= fd.Date);
         if (!string.IsNullOrEmpty(toDate) && DateTime.TryParse(toDate, out var td))
-            query = query.Where(x => x.INSDatetime.CompareTo(td.ToString("yyyyMMdd")) <= 0);
+            query = query.Where(x => x.Work_Date <= td.Date);
 
         var data = await query.OrderByDescending(x => x.Time_line).AsNoTracking().ToListAsync();
 
@@ -1168,8 +1161,8 @@ namespace DefectManagement.Controllers
         var top10Ops = byOperation.Take(10).ToList();
 
         var dailyTrend = data
-            .Where(x => x.Time_line.HasValue)
-            .GroupBy(x => x.Time_line!.Value.Date)
+            .Where(x => x.Work_Date.HasValue)
+            .GroupBy(x => x.Work_Date!.Value)
             .Select(g => new { Date = g.Key, QtyNG = g.Sum(x => x.Qty_NG ?? 0), Count = g.Count() })
             .OrderBy(x => x.Date).ToList();
         var qtyList   = dailyTrend.Select(x => (double)x.QtyNG).ToList();
@@ -1308,14 +1301,14 @@ namespace DefectManagement.Controllers
         row += 2;
 
         // Detail records section title
-        ws1.Cells[row, 1, row, 11].Merge = true;
+        ws1.Cells[row, 1, row, 13].Merge = true;
         ws1.Cells[row, 1].Value = "CHI TIẾT DEFECT RECORDS";
-        StyleHeader(ws1.Cells[row, 1, row, 11], cBlueMid, cWhite, 12);
+        StyleHeader(ws1.Cells[row, 1, row, 13], cBlueMid, cWhite, 12);
         ws1.Row(row).Height = 22;
         row++;
 
         // Detail table header
-        string[] detailHeaders = { "#", "Work Order", "Item Code", "Defect Code", "Defect Name", "Qty NG", "Operation", "Employer", "Note", "Image", "Time Line" };
+        string[] detailHeaders = { "#", "Work Order", "Item Code", "Defect Code", "Defect Name", "Qty NG", "Operation", "Employer", "Note", "Image", "Time Line", "Ngày làm việc", "Ca" };
         for (int c = 0; c < detailHeaders.Length; c++)
         {
             ws1.Cells[row, c + 1].Value = detailHeaders[c];
@@ -1343,6 +1336,8 @@ namespace DefectManagement.Controllers
             ws1.Cells[row, 8].Value  = $"{item.Employer_code} {item.Employer_name}".Trim();
             ws1.Cells[row, 9].Value  = item.Note;
             ws1.Cells[row, 11].Value = item.Time_line?.ToString("dd/MM/yyyy HH:mm:ss");
+            ws1.Cells[row, 12].Value = item.Work_Date?.ToString("dd/MM/yyyy");
+            ws1.Cells[row, 13].Value = item.Shift;
 
             ws1.Cells[row, 6].Style.Numberformat.Format = "#,##0";
             ws1.Cells[row, 6].Style.Font.Bold = true;
@@ -1356,7 +1351,7 @@ namespace DefectManagement.Controllers
             ws1.Cells[row, 7].Style.HorizontalAlignment = ExcelHorizontalAlignment.Center;
 
             // Row alternate background (skip op cell which has its own bg)
-            foreach (int c in new[] { 1, 2, 3, 4, 5, 6, 8, 9, 11 })
+            foreach (int c in new[] { 1, 2, 3, 4, 5, 6, 8, 9, 11, 12, 13 })
                 SetFill(ws1.Cells[row, c], rowBg);
 
             // Embed image
@@ -1387,7 +1382,9 @@ namespace DefectManagement.Controllers
             ws1.Cells[row, 1].Style.HorizontalAlignment  = ExcelHorizontalAlignment.Center;
             ws1.Cells[row, 4].Style.HorizontalAlignment  = ExcelHorizontalAlignment.Center;
             ws1.Cells[row, 11].Style.HorizontalAlignment = ExcelHorizontalAlignment.Center;
-            ThinBorder(ws1.Cells[row, 1, row, 11]);
+            ws1.Cells[row, 12].Style.HorizontalAlignment = ExcelHorizontalAlignment.Center;
+            ws1.Cells[row, 13].Style.HorizontalAlignment = ExcelHorizontalAlignment.Center;
+            ThinBorder(ws1.Cells[row, 1, row, 13]);
 
             row++;
             stt++;
@@ -1404,7 +1401,9 @@ namespace DefectManagement.Controllers
         ws1.Column(9).Width  = 22;
         ws1.Column(10).Width = 10;
         ws1.Column(11).Width = 20;
-        ws1.PrinterSettings.PrintArea = ws1.Cells[1, 1, row - 1, 11];
+        ws1.Column(12).Width = 16;
+        ws1.Column(13).Width = 10;
+        ws1.PrinterSettings.PrintArea = ws1.Cells[1, 1, row - 1, 13];
 
         /* ═══════════════════════════════════════════════════
            TAB 2 – Defect by Operation

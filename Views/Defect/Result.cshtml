@@ -157,6 +157,25 @@
         /* ===== NULL DISPLAY ===== */
         .text-null { color: var(--ink-3); font-style: italic; font-size: 11px; }
 
+        /* ===== SHIFT BADGE ===== */
+        .badge-shift {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 999px;
+            font-size: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: .3px;
+        }
+        .badge-shift-day { background: #fef3c7; color: #92400e; }
+        .badge-shift-night { background: #e0e7ff; color: #3730a3; }
+        .workdate-note-icon {
+            color: var(--ink-3);
+            cursor: help;
+            margin-left: 4px;
+            font-size: 11px;
+        }
+
         /* ===== PAGINATION ===== */
         .pagination-container {
             display: flex;
@@ -323,11 +342,11 @@
                             </div>
                             
                              <div class="col-md-3">
-                                <label class="form-label">From:</label>
+                                <label class="form-label" title="Lọc theo ngày làm việc — ca đêm được tính vào ngày làm việc hôm trước">From (ngày làm việc):</label>
                                 <input type="date" class="form-control" name="fromInsDateTime" value="@ViewBag.FromInsDateTime" />
                             </div>
                             <div class="col-md-3">
-                                <label class="form-label">To:</label>
+                                <label class="form-label" title="Lọc theo ngày làm việc — ca đêm được tính vào ngày làm việc hôm trước">To (ngày làm việc):</label>
                                 <input type="date" class="form-control" name="toInsDateTime" value="@ViewBag.ToInsDateTime" />
                             </div>
 
@@ -410,7 +429,9 @@
                                     <th>Employer Name</th>
                                     <th>Note</th>
                                     <th>Image</th>
-                                    <th>Time Line</th>
+                                    <th>Ngày làm việc</th>
+                                    <th>Ca</th>
+                                    <th>Thời điểm nhập</th>
                                 </tr>
                                 </thead>
                                 <tbody>
@@ -425,10 +446,10 @@
                                         <td>@(string.IsNullOrWhiteSpace(item.Operation) ? Html.Raw("<span class='text-null'>NULL</span>") : item.Operation)</td>
                                         <td>@(string.IsNullOrWhiteSpace(item.Employer_code) ? Html.Raw("<span class='text-null'>NULL</span>") : item.Employer_code)</td>
                                         <td>@(string.IsNullOrWhiteSpace(item.Employer_name) ? Html.Raw("<span class='text-null'>NULL</span>") : item.Employer_name)</td>
-                                        <td>
+                                        <td style="max-width: 220px;">
                                             @if (!string.IsNullOrWhiteSpace(item.Note))
                                             {
-                                                <span class="text-truncate d-inline-block" style="max-width: 150px;" title="@item.Note">
+                                                <span style="white-space: normal; word-break: break-word; display: inline-block;">
                                                     @item.Note
                                                 </span>
                                             }
@@ -448,7 +469,34 @@
                                                 <span class="text-null">NULL</span>
                                             }
                                         </td>
-                                        <td>
+                                        <td class="text-nowrap">
+                                            @if (item.Work_Date.HasValue)
+                                            {
+                                                @item.Work_Date.Value.ToString("dd/MM/yyyy")
+                                                if (item.Time_line.HasValue && item.Time_line.Value.Date != item.Work_Date.Value.Date)
+                                                {
+                                                    <i class="fas fa-circle-info workdate-note-icon"
+                                                       title="Ghi nhận lúc @item.Time_line.Value.ToString("HH:mm") ngày @item.Time_line.Value.ToString("dd/MM") — tính vào ca @(item.Shift == "Night" ? "Đêm" : "Ngày") của ngày làm việc @item.Work_Date.Value.ToString("dd/MM/yyyy")"></i>
+                                                }
+                                            }
+                                            else
+                                            {
+                                                <span class="text-null">NULL</span>
+                                            }
+                                        </td>
+                                        <td class="text-center">
+                                            @if (!string.IsNullOrWhiteSpace(item.Shift))
+                                            {
+                                                <span class="badge-shift @(item.Shift == "Night" ? "badge-shift-night" : "badge-shift-day")">
+                                                    @(item.Shift == "Night" ? "Đêm" : "Ngày")
+                                                </span>
+                                            }
+                                            else
+                                            {
+                                                <span class="text-null">NULL</span>
+                                            }
+                                        </td>
+                                        <td class="text-nowrap">
                                             @(item.Time_line.HasValue
                                                 ? item.Time_line.Value.ToString("dd/MM/yyyy HH:mm:ss")
                                                 : Html.Raw("<span class='text-null'>NULL</span>"))
@@ -552,7 +600,7 @@
         $('#defectTable').DataTable({
             responsive: true,
             pageLength: 25,
-            order: [[11, 'desc']], // Sort by Time_line desc
+            order: [[12, 'desc']], // Sort by Thời điểm nhập (Time_line) desc
             language: {
                 search: "Tìm kiếm:",
                 lengthMenu: "Hiển thị _MENU_ bản ghi",
@@ -563,7 +611,7 @@
                 emptyTable: "Không có dữ liệu trong bảng"
             },
             columnDefs: [
-                { targets: [10], orderable: false } // Image column không sort được
+                { targets: [9], orderable: false } // Image column không sort được
             ]
         });
     });
