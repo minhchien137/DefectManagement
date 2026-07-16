@@ -270,7 +270,7 @@ namespace DefectManagement.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> Create(SVN_Defect_Record_History model, IFormFile imageFile, bool IsNightShift = false)
+        public async Task<IActionResult> Create(SVN_Defect_Record_History model, IFormFile imageFile)
         {
             try
             {
@@ -347,7 +347,7 @@ namespace DefectManagement.Controllers
                     imagePath ?? "",
                     timeLine);
 
-                Console.WriteLine($"Stored procedure executed. IsNightShift={IsNightShift}, INSDatetime={insDatetime}, TimeLine={timeLine}");
+                Console.WriteLine($"Stored procedure executed. INSDatetime={insDatetime}, TimeLine={timeLine}");
 
                 return Json(new { success = true, message = "Lưu thông tin thành công!", data = model });
             }

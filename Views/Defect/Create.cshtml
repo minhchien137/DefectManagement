@@ -9,29 +9,6 @@
 <!-- Toast Container -->
 <div class="toast-container" id="toastContainer"></div>
 
-<!-- Night Shift Modal -->
-<div id="nightShiftModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.55); z-index:9999; align-items:center; justify-content:center;">
-    <div style="background:#fff; border:1px solid #e4e4e7; border-radius:12px; padding:32px 28px; max-width:420px; width:90%; box-shadow:0 1px 3px rgba(0,0,0,.08); text-align:center;">
-        <h3 style="margin:0 0 10px; color:#09090b; font-size:1.05rem; font-weight:800; letter-spacing:-.3px;">Phát hiện ca đêm</h3>
-        <p style="color:#71717a; margin:0 0 8px; font-size:0.875rem;">
-            Hiện tại là <strong id="modalCurrentTime" style="color:#09090b;"></strong>.
-        </p>
-        <p style="color:#71717a; margin:0 0 24px; font-size:0.875rem;">
-            Bạn đang muốn nhập <strong style="color:#09090b;">defect</strong> cho <strong style="color:#dc2626;">ca đêm</strong> không?
-        </p>
-        <div style="display:flex; gap:12px; justify-content:center;">
-            <button id="btnNightShiftYes"
-                style="padding:10px 28px; background:#dc2626; color:#fff; border:none; border-radius:8px; font-size:0.8rem; cursor:pointer; font-weight:700; text-transform:uppercase; letter-spacing:.5px; transition:background .15s;">
-                Có
-            </button>
-            <button id="btnNightShiftNo"
-                style="padding:10px 28px; background:#3f3f46; color:#fff; border:none; border-radius:8px; font-size:0.8rem; cursor:pointer; font-weight:700; text-transform:uppercase; letter-spacing:.5px; transition:background .15s;">
-                Không, ca ngày!
-            </button>
-        </div>
-    </div>
-</div>
-
 <div class="defect-form-container">
     <div class="form-header">
         <h1 class="form-title">Nhập dữ liệu lỗi</h1>
@@ -505,36 +482,6 @@
         });
 
 
-        // ===== Night Shift Logic =====
-        let pendingNightShiftResolve = null;
-
-        function showNightShiftModal() {
-            const now = new Date();
-            const hh = String(now.getHours()).padStart(2, '0');
-            const mm = String(now.getMinutes()).padStart(2, '0');
-            document.getElementById('modalCurrentTime').textContent = hh + ':' + mm;
-            const modal = document.getElementById('nightShiftModal');
-            modal.style.display = 'flex';
-            return new Promise(resolve => { pendingNightShiftResolve = resolve; });
-        }
-
-        let nightShiftClickTime = null; // Lưu giờ lúc bấm Có
-
-        document.getElementById('btnNightShiftYes').addEventListener('click', function () {
-            // Ghi lại giờ phút lúc bấm Có
-            const now = new Date();
-            const h = now.getHours();
-            const m = String(now.getMinutes()).padStart(2, '0');
-            nightShiftClickTime = `${h}h${m}'`;
-            document.getElementById('nightShiftModal').style.display = 'none';
-            if (pendingNightShiftResolve) pendingNightShiftResolve(true);
-        });
-
-        document.getElementById('btnNightShiftNo').addEventListener('click', function () {
-            document.getElementById('nightShiftModal').style.display = 'none';
-            if (pendingNightShiftResolve) pendingNightShiftResolve(false);
-        });
-
         document.getElementById("btnSaveToDB").addEventListener("click", async function (e) {
             e.preventDefault();
 
@@ -558,21 +505,6 @@
                 return;
             }
 
-            // === Kiểm tra giờ: 00h - 8h ===
-            const currentHour = new Date().getHours();
-            let isNightShift = false;
-
-            if (currentHour >= 0 && currentHour < 8) {
-                const userChoice = await showNightShiftModal();
-                if (userChoice === false) {
-                    // Người dùng chọn Không → báo chưa tới giờ
-                    showToast("⏰ Chưa tới giờ sản xuất ca ngày, vui lòng thử lại!", 'error', 4000);
-                    return;
-                }
-                // Người dùng chọn Có → đánh dấu ca đêm
-                isNightShift = true;
-            }
-
             if (employerCode) localStorage.setItem('Employer_code', employerCode);
             if (workOrder)    localStorage.setItem('WorkOrder', workOrder);
             if (operation)    localStorage.setItem('Operation', operation);
@@ -590,19 +522,13 @@
             formData.append('Defect_Name', defectName);
             formData.append('Employer_name', currentNameEmployer);
             formData.append('Qty_NG', qtyNG);
-            const rawNote = document.getElementById("Note").value || '';
-            const noteValue = (isNightShift && nightShiftClickTime)
-                ? (rawNote ? `${rawNote} (${nightShiftClickTime})` : `(${nightShiftClickTime})`)
-                : rawNote;
+            const noteValue = document.getElementById("Note").value || '';
             formData.append('Note', noteValue);
-            formData.append('IsNightShift', isNightShift ? 'true' : 'false');
 
             const imageInput = document.getElementById('imageInput');
             if (imageInput.files.length > 0) {
                 formData.append('imageFile', imageInput.files[0]);
             }
-
-            console.log("Sending data, isNightShift =", isNightShift);
 
             fetch('/Defect/Create', {
                 method: 'POST',
