@@ -466,9 +466,99 @@ C:/DefectManagement/obj/Debug/net8.0/ref/DefectManagement.dll
 /Users/pm/Coldzy/DefectManagement/bin/Debug/net8.0/publish/DefectManagement.deps.json
 /Users/pm/Coldzy/DefectManagement/bin/Debug/net8.0/publish/DefectManagement.runtimeconfig.json
 /Users/pm/Coldzy/DefectManagement/bin/Debug/net8.0/publish/DefectManagement.staticwebassets.endpoints.json
+C:\Users\Minh Chien\AppData\Local\Temp\buildcheck\publish\web.config
+C:\Users\Minh Chien\AppData\Local\Temp\buildcheck\appsettings.Development.json
+C:\Users\Minh Chien\AppData\Local\Temp\buildcheck\appsettings.json
+C:\Users\Minh Chien\AppData\Local\Temp\buildcheck\publish\appsettings.Development.json
+C:\Users\Minh Chien\AppData\Local\Temp\buildcheck\publish\appsettings.json
+C:\Users\Minh Chien\AppData\Local\Temp\buildcheck\publish\DefectManagement.deps.json
+C:\Users\Minh Chien\AppData\Local\Temp\buildcheck\publish\DefectManagement.runtimeconfig.json
+C:\Users\Minh Chien\AppData\Local\Temp\buildcheck\publish\DefectManagement.staticwebassets.endpoints.json
+C:\Users\Minh Chien\AppData\Local\Temp\buildcheck\DefectManagement.staticwebassets.runtime.json
+C:\Users\Minh Chien\AppData\Local\Temp\buildcheck\DefectManagement.staticwebassets.endpoints.json
+C:\Users\Minh Chien\AppData\Local\Temp\buildcheck\DefectManagement.exe
+C:\Users\Minh Chien\AppData\Local\Temp\buildcheck\DefectManagement.deps.json
+C:\Users\Minh Chien\AppData\Local\Temp\buildcheck\DefectManagement.runtimeconfig.json
+C:\Users\Minh Chien\AppData\Local\Temp\buildcheck\DefectManagement.dll
+C:\Users\Minh Chien\AppData\Local\Temp\buildcheck\DefectManagement.pdb
+C:\Users\Minh Chien\AppData\Local\Temp\buildcheck2\publish\web.config
+C:\Users\Minh Chien\AppData\Local\Temp\buildcheck2\appsettings.Development.json
+C:\Users\Minh Chien\AppData\Local\Temp\buildcheck2\appsettings.json
+C:\Users\Minh Chien\AppData\Local\Temp\buildcheck2\publish\appsettings.Development.json
+C:\Users\Minh Chien\AppData\Local\Temp\buildcheck2\publish\appsettings.json
+C:\Users\Minh Chien\AppData\Local\Temp\buildcheck2\publish\DefectManagement.deps.json
+C:\Users\Minh Chien\AppData\Local\Temp\buildcheck2\publish\DefectManagement.runtimeconfig.json
+C:\Users\Minh Chien\AppData\Local\Temp\buildcheck2\publish\DefectManagement.staticwebassets.endpoints.json
+C:\Users\Minh Chien\AppData\Local\Temp\buildcheck2\DefectManagement.staticwebassets.runtime.json
+C:\Users\Minh Chien\AppData\Local\Temp\buildcheck2\DefectManagement.staticwebassets.endpoints.json
+C:\Users\Minh Chien\AppData\Local\Temp\buildcheck2\DefectManagement.exe
+C:\Users\Minh Chien\AppData\Local\Temp\buildcheck2\DefectManagement.deps.json
+C:\Users\Minh Chien\AppData\Local\Temp\buildcheck2\DefectManagement.runtimeconfig.json
+C:\Users\Minh Chien\AppData\Local\Temp\buildcheck2\DefectManagement.dll
+C:\Users\Minh Chien\AppData\Local\Temp\buildcheck2\DefectManagement.pdb
+C:\Users\Minh Chien\AppData\Local\Temp\buildcheck3\publish\web.config
+C:\Users\Minh Chien\AppData\Local\Temp\buildcheck3\appsettings.Development.json
+C:\Users\Minh Chien\AppData\Local\Temp\buildcheck3\appsettings.json
+C:\Users\Minh Chien\AppData\Local\Temp\buildcheck3\publish\appsettings.Development.json
+C:\Users\Minh Chien\AppData\Local\Temp\buildcheck3\publish\appsettings.json
+C:\Users\Minh Chien\AppData\Local\Temp\buildcheck3\publish\DefectManagement.deps.json
+C:\Users\Minh Chien\AppData\Local\Temp\buildcheck3\publish\DefectManagement.runtimeconfig.json
+C:\Users\Minh Chien\AppData\Local\Temp\buildcheck3\publish\DefectManagement.staticwebassets.endpoints.json
+C:\Users\Minh Chien\AppData\Local\Temp\buildcheck3\DefectManagement.staticwebassets.runtime.json
+C:\Users\Minh Chien\AppData\Local\Temp\buildcheck3\DefectManagement.staticwebassets.endpoints.json
+C:\Users\Minh Chien\AppData\Local\Temp\buildcheck3\DefectManagement.exe
+C:\Users\Minh Chien\AppData\Local\Temp\buildcheck3\DefectManagement.deps.json
+C:\Users\Minh Chien\AppData\Local\Temp\buildcheck3\DefectManagement.runtimeconfig.json
+C:\Users\Minh Chien\AppData\Local\Temp\buildcheck3\DefectManagement.dll
+C:\Users\Minh Chien\AppData\Local\Temp\buildcheck3\DefectManagement.pdb
+C:\Users\Minh Chien\AppData\Local\Temp\buildcheck4\publish\web.config
+C:\Users\Minh Chien\AppData\Local\Temp\buildcheck4\appsettings.Development.json
+C:\Users\Minh Chien\AppData\Local\Temp\buildcheck4\appsettings.json
+C:\Users\Minh Chien\AppData\Local\Temp\buildcheck4\publish\appsettings.Development.json
+C:\Users\Minh Chien\AppData\Local\Temp\buildcheck4\publish\appsettings.json
+C:\Users\Minh Chien\AppData\Local\Temp\buildcheck4\publish\DefectManagement.deps.json
+C:\Users\Minh Chien\AppData\Local\Temp\buildcheck4\publish\DefectManagement.runtimeconfig.json
+C:\Users\Minh Chien\AppData\Local\Temp\buildcheck4\publish\DefectManagement.staticwebassets.endpoints.json
+C:\Users\Minh Chien\AppData\Local\Temp\buildcheck4\DefectManagement.staticwebassets.runtime.json
+C:\Users\Minh Chien\AppData\Local\Temp\buildcheck4\DefectManagement.staticwebassets.endpoints.json
+C:\Users\Minh Chien\AppData\Local\Temp\buildcheck4\DefectManagement.exe
+C:\Users\Minh Chien\AppData\Local\Temp\buildcheck4\DefectManagement.deps.json
+C:\Users\Minh Chien\AppData\Local\Temp\buildcheck4\DefectManagement.runtimeconfig.json
+C:\Users\Minh Chien\AppData\Local\Temp\buildcheck4\DefectManagement.dll
+C:\Users\Minh Chien\AppData\Local\Temp\buildcheck4\DefectManagement.pdb
+C:\Users\Minh Chien\AppData\Local\Temp\buildcheck5\publish\web.config
+C:\Users\Minh Chien\AppData\Local\Temp\buildcheck5\appsettings.Development.json
+C:\Users\Minh Chien\AppData\Local\Temp\buildcheck5\appsettings.json
+C:\Users\Minh Chien\AppData\Local\Temp\buildcheck5\publish\appsettings.Development.json
+C:\Users\Minh Chien\AppData\Local\Temp\buildcheck5\publish\appsettings.json
+C:\Users\Minh Chien\AppData\Local\Temp\buildcheck5\publish\DefectManagement.deps.json
+C:\Users\Minh Chien\AppData\Local\Temp\buildcheck5\publish\DefectManagement.runtimeconfig.json
+C:\Users\Minh Chien\AppData\Local\Temp\buildcheck5\publish\DefectManagement.staticwebassets.endpoints.json
+C:\Users\Minh Chien\AppData\Local\Temp\buildcheck5\DefectManagement.staticwebassets.runtime.json
+C:\Users\Minh Chien\AppData\Local\Temp\buildcheck5\DefectManagement.staticwebassets.endpoints.json
+C:\Users\Minh Chien\AppData\Local\Temp\buildcheck5\DefectManagement.exe
+C:\Users\Minh Chien\AppData\Local\Temp\buildcheck5\DefectManagement.deps.json
+C:\Users\Minh Chien\AppData\Local\Temp\buildcheck5\DefectManagement.runtimeconfig.json
+C:\Users\Minh Chien\AppData\Local\Temp\buildcheck5\DefectManagement.dll
+C:\Users\Minh Chien\AppData\Local\Temp\buildcheck5\DefectManagement.pdb
+C:\Users\Minh Chien\AppData\Local\Temp\buildcheck6\publish\web.config
+C:\Users\Minh Chien\AppData\Local\Temp\buildcheck6\appsettings.Development.json
+C:\Users\Minh Chien\AppData\Local\Temp\buildcheck6\appsettings.json
+C:\Users\Minh Chien\AppData\Local\Temp\buildcheck6\publish\appsettings.Development.json
+C:\Users\Minh Chien\AppData\Local\Temp\buildcheck6\publish\appsettings.json
+C:\Users\Minh Chien\AppData\Local\Temp\buildcheck6\publish\DefectManagement.deps.json
+C:\Users\Minh Chien\AppData\Local\Temp\buildcheck6\publish\DefectManagement.runtimeconfig.json
+C:\Users\Minh Chien\AppData\Local\Temp\buildcheck6\publish\DefectManagement.staticwebassets.endpoints.json
+C:\Users\Minh Chien\AppData\Local\Temp\buildcheck6\DefectManagement.staticwebassets.runtime.json
+C:\Users\Minh Chien\AppData\Local\Temp\buildcheck6\DefectManagement.staticwebassets.endpoints.json
+C:\Users\Minh Chien\AppData\Local\Temp\buildcheck6\DefectManagement.exe
+C:\Users\Minh Chien\AppData\Local\Temp\buildcheck6\DefectManagement.deps.json
+C:\Users\Minh Chien\AppData\Local\Temp\buildcheck6\DefectManagement.runtimeconfig.json
+C:\Users\Minh Chien\AppData\Local\Temp\buildcheck6\DefectManagement.dll
+C:\Users\Minh Chien\AppData\Local\Temp\buildcheck6\DefectManagement.pdb
+D:\DefectManagement\bin\Debug\net8.0\publish\web.config
 D:\DefectManagement\bin\Debug\net8.0\appsettings.Development.json
 D:\DefectManagement\bin\Debug\net8.0\appsettings.json
-D:\DefectManagement\bin\Debug\net8.0\publish\web.config
 D:\DefectManagement\bin\Debug\net8.0\publish\appsettings.Development.json
 D:\DefectManagement\bin\Debug\net8.0\publish\appsettings.json
 D:\DefectManagement\bin\Debug\net8.0\publish\DefectManagement.deps.json
@@ -629,3 +719,33 @@ D:\DefectManagement\obj\Debug\net8.0\refint\DefectManagement.dll
 D:\DefectManagement\obj\Debug\net8.0\DefectManagement.pdb
 D:\DefectManagement\obj\Debug\net8.0\DefectManagement.genruntimeconfig.cache
 D:\DefectManagement\obj\Debug\net8.0\ref\DefectManagement.dll
+C:\Users\Minh Chien\AppData\Local\Temp\buildcheck7\publish\web.config
+C:\Users\Minh Chien\AppData\Local\Temp\buildcheck7\appsettings.Development.json
+C:\Users\Minh Chien\AppData\Local\Temp\buildcheck7\appsettings.json
+C:\Users\Minh Chien\AppData\Local\Temp\buildcheck7\publish\appsettings.Development.json
+C:\Users\Minh Chien\AppData\Local\Temp\buildcheck7\publish\appsettings.json
+C:\Users\Minh Chien\AppData\Local\Temp\buildcheck7\publish\DefectManagement.deps.json
+C:\Users\Minh Chien\AppData\Local\Temp\buildcheck7\publish\DefectManagement.runtimeconfig.json
+C:\Users\Minh Chien\AppData\Local\Temp\buildcheck7\publish\DefectManagement.staticwebassets.endpoints.json
+C:\Users\Minh Chien\AppData\Local\Temp\buildcheck7\DefectManagement.staticwebassets.runtime.json
+C:\Users\Minh Chien\AppData\Local\Temp\buildcheck7\DefectManagement.staticwebassets.endpoints.json
+C:\Users\Minh Chien\AppData\Local\Temp\buildcheck7\DefectManagement.exe
+C:\Users\Minh Chien\AppData\Local\Temp\buildcheck7\DefectManagement.deps.json
+C:\Users\Minh Chien\AppData\Local\Temp\buildcheck7\DefectManagement.runtimeconfig.json
+C:\Users\Minh Chien\AppData\Local\Temp\buildcheck7\DefectManagement.dll
+C:\Users\Minh Chien\AppData\Local\Temp\buildcheck7\DefectManagement.pdb
+C:\Users\Minh Chien\AppData\Local\Temp\buildcheck8\publish\web.config
+C:\Users\Minh Chien\AppData\Local\Temp\buildcheck8\appsettings.Development.json
+C:\Users\Minh Chien\AppData\Local\Temp\buildcheck8\appsettings.json
+C:\Users\Minh Chien\AppData\Local\Temp\buildcheck8\publish\appsettings.Development.json
+C:\Users\Minh Chien\AppData\Local\Temp\buildcheck8\publish\appsettings.json
+C:\Users\Minh Chien\AppData\Local\Temp\buildcheck8\publish\DefectManagement.deps.json
+C:\Users\Minh Chien\AppData\Local\Temp\buildcheck8\publish\DefectManagement.runtimeconfig.json
+C:\Users\Minh Chien\AppData\Local\Temp\buildcheck8\publish\DefectManagement.staticwebassets.endpoints.json
+C:\Users\Minh Chien\AppData\Local\Temp\buildcheck8\DefectManagement.staticwebassets.runtime.json
+C:\Users\Minh Chien\AppData\Local\Temp\buildcheck8\DefectManagement.staticwebassets.endpoints.json
+C:\Users\Minh Chien\AppData\Local\Temp\buildcheck8\DefectManagement.exe
+C:\Users\Minh Chien\AppData\Local\Temp\buildcheck8\DefectManagement.deps.json
+C:\Users\Minh Chien\AppData\Local\Temp\buildcheck8\DefectManagement.runtimeconfig.json
+C:\Users\Minh Chien\AppData\Local\Temp\buildcheck8\DefectManagement.dll
+C:\Users\Minh Chien\AppData\Local\Temp\buildcheck8\DefectManagement.pdb

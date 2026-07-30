@@ -1,0 +1,254 @@
+@{
+    ViewData["Title"] = "Đăng nhập";
+    Layout = null;
+}
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - DefectManagement</title>
+    <style>
+        * { box-sizing: border-box; }
+
+        :root {
+            --brand: #dc2626;
+            --brand-dark: #991b1b;
+            --brand-light: #fee2e2;
+            --ink: #09090b;
+            --ink-2: #3f3f46;
+            --ink-3: #71717a;
+            --surface: #ffffff;
+            --border: #e4e4e7;
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: -apple-system, 'Segoe UI', system-ui, sans-serif;
+            -webkit-font-smoothing: antialiased;
+            padding: 16px;
+            background: #f4f4f5;
+        }
+
+        .login-wrap {
+            width: 100%;
+            max-width: 380px;
+            animation: floatIn .45s ease-out;
+        }
+
+        .brand-mark {
+            text-align: center;
+            margin-bottom: 18px;
+            color: var(--brand-dark);
+            font-weight: 800;
+            font-size: 13px;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            opacity: .85;
+        }
+
+        .login-card {
+            position: relative;
+            background: var(--surface);
+            width: 100%;
+            padding: 40px 32px 32px;
+            border-radius: 18px;
+            box-shadow: 0 20px 50px rgba(0,0,0,.28), 0 2px 8px rgba(0,0,0,.06);
+            overflow: hidden;
+        }
+
+        .login-card::before {
+            content: "";
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 5px;
+            background: linear-gradient(90deg, var(--brand), var(--brand-dark));
+        }
+
+        .login-icon {
+            width: 56px;
+            height: 56px;
+            margin: 0 auto 18px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--brand), var(--brand-dark));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 8px 20px rgba(220,38,38,.35);
+        }
+
+        .login-icon svg { width: 24px; height: 24px; }
+
+        .login-card h1 {
+            font-size: 21px;
+            font-weight: 800;
+            margin: 0 0 6px;
+            color: var(--ink);
+            text-align: center;
+            letter-spacing: -.3px;
+        }
+
+        .login-card p.subtitle {
+            margin: 0 0 26px;
+            font-size: 13px;
+            color: var(--ink-3);
+            text-align: center;
+            line-height: 1.5;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--ink-2);
+            margin-bottom: 6px;
+            text-transform: uppercase;
+            letter-spacing: .4px;
+        }
+
+        .input-group {
+            position: relative;
+            margin-bottom: 18px;
+        }
+
+        .input-group svg {
+            position: absolute;
+            left: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 16px;
+            height: 16px;
+            color: var(--ink-3);
+            pointer-events: none;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 11px 12px 11px 36px;
+            border: 1.5px solid var(--border);
+            border-radius: 10px;
+            font-size: 14px;
+            color: var(--ink);
+            background: #fafafa;
+            transition: border-color .15s, box-shadow .15s, background .15s;
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: var(--brand);
+            background: #fff;
+            box-shadow: 0 0 0 4px var(--brand-light);
+        }
+
+        .btn-login {
+            width: 100%;
+            padding: 12px;
+            border: none;
+            border-radius: 10px;
+            background: linear-gradient(135deg, var(--brand), var(--brand-dark));
+            color: #fff;
+            font-weight: 700;
+            font-size: 14px;
+            letter-spacing: .2px;
+            cursor: pointer;
+            margin-top: 6px;
+            box-shadow: 0 6px 16px rgba(220,38,38,.3);
+            transition: transform .12s, box-shadow .12s, filter .12s;
+        }
+
+        .btn-login:hover { filter: brightness(1.08); }
+        .btn-login:active { transform: translateY(1px); box-shadow: 0 3px 10px rgba(220,38,38,.3); }
+
+        .error-message {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: var(--brand-light);
+            color: var(--brand-dark);
+            border: 1px solid #fecaca;
+            padding: 10px 12px;
+            border-radius: 10px;
+            font-size: 13px;
+            font-weight: 600;
+            margin-bottom: 18px;
+        }
+
+        .error-message svg { width: 16px; height: 16px; flex-shrink: 0; }
+
+        @@keyframes floatIn {
+            from { opacity: 0; transform: translateY(14px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* ===== RESPONSIVE (mobile) ===== */
+        @@media (max-width: 480px) {
+            .login-card {
+                padding: 32px 22px 26px;
+                border-radius: 14px;
+            }
+            .login-card h1 { font-size: 19px; }
+            .form-control {
+                font-size: 16px; /* tránh iOS tự zoom khi focus input */
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="login-wrap">
+        <div class="brand-mark">DefectManagement</div>
+
+        <div class="login-card">
+            <div class="login-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="4" y="10" width="16" height="10" rx="2" />
+                    <path d="M8 10V7a4 4 0 0 1 8 0v3" />
+                </svg>
+            </div>
+
+            <h1>Đăng nhập</h1>
+            <p class="subtitle">Nhập tài khoản để vào trang Thêm mã lỗi</p>
+
+            @if (ViewBag.ErrorMessage != null)
+            {
+                <div class="error-message">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="9" />
+                        <line x1="12" y1="8" x2="12" y2="13" />
+                        <line x1="12" y1="16" x2="12.01" y2="16" />
+                    </svg>
+                    <span>@ViewBag.ErrorMessage</span>
+                </div>
+            }
+
+            <form method="post" asp-action="Login" asp-controller="InputDefectCode">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="returnUrl" value="@ViewBag.ReturnUrl" />
+
+                <label class="form-label">Tài khoản</label>
+                <div class="input-group">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                        <circle cx="12" cy="7" r="4" />
+                    </svg>
+                    <input type="text" name="username" class="form-control" autocomplete="username" autofocus required />
+                </div>
+
+                <label class="form-label">Mật khẩu</label>
+                <div class="input-group">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="4" y="10" width="16" height="10" rx="2" />
+                        <path d="M8 10V7a4 4 0 0 1 8 0v3" />
+                    </svg>
+                    <input type="password" name="password" class="form-control" autocomplete="current-password" required />
+                </div>
+
+                <button type="submit" class="btn-login">Đăng nhập</button>
+            </form>
+        </div>
+    </div>
+</body>
+</html>
